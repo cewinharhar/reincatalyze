@@ -77,6 +77,7 @@ config = prepareLigand4Vina(smiles = subSmiles, config = config)
 
 print(config.ligand_files)
 
+#TODO make sure that if conifg is given in function but not returned in a automated approach, that info is stored
 #Create dataframe and store in config
 ligand2Df(
     subName=subName,
@@ -139,6 +140,7 @@ print(mutant.generationDict[1])
 # -------------  PYROPROLEX: pyRosetta-based protein relaxation -----------------
 
 #TODO start with this pipeline
+#TODO Maybe consider to use open source pymol for this https://pymolwiki.org/index.php/Optimize
 #relaxes the mutants and stores the results in the mutantClass
 main_pyroprolex()
 
