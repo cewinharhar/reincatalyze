@@ -2,13 +2,19 @@ from src.configObj import configObj
 import os
 from os.path import join as pj
 import json
+import datetime
+
+from src.mutantClass import mutantClass
 
 from src.mainHelpers.casFileExtract import casFileExtract
 from src.mainHelpers.cas2smiles import cas2smiles 
 from src.mainHelpers.prepareLigand4Vina import prepareLigand4Vina
-from src.mutantClass import mutantClass
+from src.mainHelpers.ligand2Df import ligand2Df
 
 from src.main_deepMut import main_deepMut
+from src.main_pyroprolex import main_pyroprolex
+from src.main_gaesp import main_gaesp
+from src.main_residora import main_residora
 
 #external
 import pandas as pd
@@ -17,13 +23,24 @@ import pandas as pd
 # ------------------------------------------------
 #               CONFIGURATION
 # ------------------------------------------------
+
+#Create runID
+dir(datetime)
+
+#runID = datetime.datetime.now().strftime("%d-%b-%Y_%H:%M")
+runID = datetime.datetime.now().strftime("%d-%b-%Y")
+runID = "test"
+
 working_dir = os.getcwd()  # working director containing pdbs
 data_dir = pj(working_dir, "data/")
 log_dir = pj(working_dir, "log/docking")
 
-config = configObj(
+#------------------------------------------------
+
+inputDic_config = dict(
     #---------------
-    runID="testRun",
+    #runID="testRun",
+    runID=runID,
     #---------------
     working_dir=working_dir,
     data_dir=data_dir,
@@ -34,6 +51,10 @@ config = configObj(
     thread = 8192,
     metal_containing=True
 )
+
+#------------------------------------------------
+config = configObj(inputDic_config)
+#------------------------------------------------
 
 #------------  LIGANDS  ------------------
 # DATA in json format
@@ -56,48 +77,76 @@ config = prepareLigand4Vina(smiles = subSmiles, config = config)
 
 print(config.ligand_files)
 
-
-# create df with molec name, smiles and CAS
-ligand_df = pd.DataFrame(
-    columns=["ligand_name", "ligand_smiles", "ligand_cas"]
+#Create dataframe and store in config
+ligand2Df(
+    subName=subName,
+    subSmiles=subSmiles,
+    subCas=subCas,
+    config=config
 )
 
-for name_, smiles_, cas_ in zip(subName, subSmiles, subCas):
-    ligand_df = ligand_df.append(
-        {"ligand_name": name_, "ligand_smiles": smiles_, "ligand_cas": cas_},
-        ignore_index=True,
-    )
-
-config.ligand_df = ligand_df
  
 #------------  Receptor  ------------------
 aKGD31 = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
 aKGD31Mut = "MTSETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
 
-muti = mutantClass(
-    runID="test",
-    wildTypeAASeq=aKGD31,
-    ligand_df=config.ligand_df
+#Initialize the mutantClass
+mutants = mutantClass(
+    runID           = runID,
+    wildTypeAASeq   = aKGD31,
+    ligand_df       = config.ligand_df
 )
+
+# ------------------------------------------------
+#               PIPELINE
+# ------------------------------------------------
+
+#TODO make this iteratevly and input is json
+generation = 1
+rationalMasIdx = [4,100,150]
+filePath = "/home/cewinharhar/GITHUB/gaesp/data/processed/3D_pred/testRun/aKGD_FE_oxo.cif"
 
 # -------------  DeepMut -----------------
 #INIT WITH WILDTYPE
 
-generation = 1
-
-outputSet = main_deepMut(
-                    inputSeq = muti.wildTypeAASeq,
-                    task = "rational",
-                    rationalMaskIdx=[4,100,150],
-                    model = None,
-                    tokenizer = None,
-                    huggingfaceID="Rostlab/prot_t5_xl_uniref50",
-                    paramSet = "",
-                    num_return_sequences=1,
-                    max_length=512,
-                    do_sample = True,
-                    temperature = 1.5,
-                    top_k = 20
+deepMutOutput = main_deepMut(
+                    inputSeq            = mutants.wildTypeAASeq,
+                    task                = "rational",
+                    rationalMaskIdx     = rationalMasIdx ,
+                    model               = None,
+                    tokenizer           = None,
+                    huggingfaceID       = "Rostlab/prot_t5_xl_uniref50",
+                    paramSet            = "",
+                    num_return_sequences= 1,
+                    max_length          = 512,
+                    do_sample           = True,
+                    temperature         = 1.5,
+                    top_k               = 20
                 )
 
+#add the newly generated mutants
+for mutantIterate in deepMutOutput:
+    mutants.addMutant(
+        generation  = generation,
+        AASeq       = mutantIterate,
+        mutRes      = rationalMasIdx,
+        filePath    = filePath
+    )
+
+
+print(mutant.generationDict[1])
+
+# -------------  PYROPROLEX: pyRosetta-based protein relaxation -----------------
+
+#TODO start with this pipeline
+#relaxes the mutants and stores the results in the mutantClass
+main_pyroprolex()
+
+# -------------  GAESP: GPU-accelerated Enzyme Substrate docking pipeline -----------------
+
+main_gaesp(generation=generation, mutantClass_=mutantClass, config=config)
+
+# -------------  RESIDORA: Residue selector incorporating docking results-affinity-----------------
+
+main_residora()
  
