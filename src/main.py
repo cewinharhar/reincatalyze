@@ -8,6 +8,8 @@ from src.mainHelpers.cas2smiles import cas2smiles
 from src.mainHelpers.prepareLigand4Vina import prepareLigand4Vina
 from src.mutantClass import mutantClass
 
+from src.main_deepMut import main_deepMut
+
 #external
 import pandas as pd
 # Main pipe for the whole pipeline
@@ -78,5 +80,24 @@ muti = mutantClass(
     ligand_df=config.ligand_df
 )
 
-# ----------------------------------------
+# -------------  DeepMut -----------------
+#INIT WITH WILDTYPE
+
+generation = 1
+
+outputSet = main_deepMut(
+                    inputSeq = muti.wildTypeAASeq,
+                    task = "rational",
+                    rationalMaskIdx=[4,100,150],
+                    model = None,
+                    tokenizer = None,
+                    huggingfaceID="Rostlab/prot_t5_xl_uniref50",
+                    paramSet = "",
+                    num_return_sequences=1,
+                    max_length=512,
+                    do_sample = True,
+                    temperature = 1.5,
+                    top_k = 20
+                )
+
  

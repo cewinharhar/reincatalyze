@@ -45,10 +45,11 @@ Chem.PandasTools.RenderImagesInAllDataFrames(images=True)
 
 # class to store configuration
 from src.configObj import configObj  
-from src.dockingHelpers.logRun import logRun
 from src.mutantClass import mutantClass
-from src.dockingHelpers.prepareReceptors import prepareReceptors
-from src.dockingHelpers.extractTableFromVinaOutput import extractTableFromVinaOutput
+
+from src.gaespHelpers.logRun import logRun
+from src.gaespHelpers.prepareReceptors import prepareReceptors
+from src.gaespHelpers.extractTableFromVinaOutput import extractTableFromVinaOutput
 
 ########################################################
 #                   Preparation
