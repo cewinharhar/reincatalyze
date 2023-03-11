@@ -1,0 +1,10 @@
+Log of docking approach 
+ date: 2023-03-07
+substances_db: []
+center_coordinates: [-12.951, -44.891, 4.451]
+box size in angström: [25, 25, 25]
+num_modes: 9
+exhaustiveness: 64
+energy_range: 3
+output_formate: pdbqt
+metal containing: False

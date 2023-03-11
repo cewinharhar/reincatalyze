@@ -1,0 +1,123 @@
+import esm
+import gym
+import numpy as np
+import torch
+
+
+class ProteinMutationEnv(gym.Env):
+    """
+    This script implements a ProteinMutationEnv class that defines the environment for the RL agent.
+    The environment takes in a target amino acid sequence and its corresponding 3D structure as inputs.
+    It has a maximum number of steps that the agent can take, which is set to 10 by default.
+    The environment defines the reset() and step() methods, which respectively reset the environment to
+    its initial state and execute a single action of the agent.
+    The step() method applies a random mutation to the current amino acid sequence,
+    predicts its 3D structure using the ESM model, and computes a reward based on the RMSD between the predicted and target structures.
+    """
+
+    def __init__(self, sequence, target_structure, max_steps=10):
+        super().__init__()
+
+        self.sequence = sequence
+        self.target_structure = target_structure
+        self.max_steps = max_steps
+        self.current_step = 0
+        self.current_structure = None
+
+        self.esm_model, _ = esm.pretrained.esmfold_v1()
+        #        self.esm_model, _ = esm.pretrained.esm1_t6_43M_UR50S()
+        self.esm_alphabet = esm.pretrained.get_local_alphabet(
+            "protein_alphabet"
+        )
+
+        self.observation_space = gym.spaces.Box(
+            low=0, high=len(self.esm_alphabet), shape=(len(self.sequence),)
+        )
+        self.action_space = gym.spaces.Discrete(len(self.esm_alphabet))
+
+    def reset(self):
+        self.current_step = 0
+        self.current_structure = None
+        return self._get_observation()
+
+    def step(self, action):
+        # Apply mutation to the sequence
+        new_sequence = list(self.sequence)
+        new_sequence[self.current_step] = self.esm_alphabet.decode(action)
+        new_sequence = "".join(new_sequence)
+
+        # Predict structure for mutated sequence
+        with torch.no_grad():
+            _, _, embeddings = self.esm_model(new_sequence)
+        predicted_structure = esm.structure_module.predict_distance(
+            embeddings.unsqueeze(0), weights=self.esm_model.embed_dist.final_fc
+        )
+
+        # Compute reward based on structure
+        reward = self._compute_reward(predicted_structure)
+
+        # Update current state
+        self.sequence = new_sequence
+        self.current_structure = predicted_structure
+        self.current_step += 1
+
+        # Check if episode is over
+        done = self.current_step >= self.max_steps
+
+        return self._get_observation(), reward, done, {}
+
+    def _get_observation(self):
+        # Encode the current sequence using the ESM alphabet
+        encoded_sequence = np.array(
+            [self.esm_alphabet.encode(aa) for aa in self.sequence]
+        )
+        return encoded_sequence
+
+    def _compute_reward(self, predicted_structure):
+        # Compute the root mean squared deviation (RMSD) between the predicted and target structures
+        rmsd = esm.structure_module.rmsd(
+            self.target_structure, predicted_structure
+        )
+        # The reward is inversely proportional to the RMSD, with a maximum of 1.0
+        reward = max(0.0, 1.0 - rmsd / 10.0)
+        return reward
+
+
+def train_agent(env, agent, num_episodes=1000):
+    """
+    The script also defines a train_agent() function that trains the RL agent.
+    It takes in an instance of the ProteinMutationEnv class and an instance of the RandomAgent class,
+    which is a simple agent that selects a random action at each step. The function runs a specified number of episodes,
+    resets the environment at the beginning of each episode, and executes the agent's act() method at each step.
+    It also computes and prints the total reward obtained by the agent in each episode.
+    """
+    for i in range(num_episodes):
+        obs = env.reset()
+        done = False
+        total_reward = 0
+        while not done:
+            action = agent.act(obs)
+            obs, reward, done, _ = env.step(action)
+            total_reward += reward
+            agent.observe(reward)
+        print(f"Episode {i+1}: Total reward = {total_reward:.2f}")
+
+
+class RandomAgent:
+    def __init__(self, action_space):
+        self.action_space = action_space
+
+    def act(self, obs):
+        return self.action_space.sample()
+
+    def observe(self, reward):
+        pass
+
+
+sequence = "MKYLLPTACLAVLLVLSYLGAVFNQHLCGSHLVEALYLVCGERGFFYTPK"
+target_structure = np.load("target_structure.npy")
+
+env = ProteinMutationEnv(sequence, target_structure)
+agent = RandomAgent(env.action_space)
+
+train_agent(env, agent)
