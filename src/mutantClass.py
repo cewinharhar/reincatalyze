@@ -17,9 +17,10 @@ class mutantClass:
         assert isinstance(generation, int)
         assert isinstance(AASeq, str)
 
-    
-        # add dict to generation X
-        self.generationDict[generation] = {}
+        if not self.generationDict.get(generation):
+            # add dict to generation X
+            self.generationDict[generation] = {}
+            
         # hash AAseq of mutant to use as key
         mutID = hashlib.sha1(AASeq.encode()).hexdigest()
         # add id to overview ID list

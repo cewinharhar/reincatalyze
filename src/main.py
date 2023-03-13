@@ -1,8 +1,10 @@
-from src.configObj import configObj  
+from src.configObj import configObj   
 import os
 from os.path import join as pj
 import json
 import datetime
+import requests
+from pprint import pprint
 
 from src.mutantClass import mutantClass
 
@@ -10,6 +12,7 @@ from src.mainHelpers.casFileExtract import casFileExtract
 from src.mainHelpers.cas2smiles import cas2smiles 
 from src.mainHelpers.prepareLigand4Vina import prepareLigand4Vina
 from src.mainHelpers.ligand2Df import ligand2Df
+from src.mainHelpers.prepare4APIRequest import prepare4APIRequest
 
 from src.main_deepMut import main_deepMut
 from src.main_pyroprolex import main_pyroprolex
@@ -37,7 +40,7 @@ log_dir = pj(working_dir, "log/docking")
 
 #------------------------------------------------
 
-inputDic_config = dict(
+""" inputDic_config = dict(
     #---------------
     #runID="testRun",
     runID=runID,
@@ -50,10 +53,23 @@ inputDic_config = dict(
     vina_gpu_cuda_path="/home/cewinharhar/GITHUB/Vina-GPU-CUDA/Vina-GPU",
     thread = 8192,
     metal_containing=True
-)
+) """
 
 #------------------------------------------------
-config = configObj(inputDic_config)
+config = configObj(
+    #---------------
+    #runID="testRun",
+    runID=runID,
+    #---------------
+    working_dir=working_dir,
+    data_dir=data_dir,
+    log_dir=log_dir,
+    NADP_cofactor=False,
+    gpu_vina=True,
+    vina_gpu_cuda_path="/home/cewinharhar/GITHUB/Vina-GPU-CUDA/Vina-GPU",
+    thread = 8192,
+    metal_containing=True    
+)
 #------------------------------------------------
 
 #------------  LIGANDS  ------------------
@@ -106,24 +122,35 @@ mutants = mutantClass(
 generation = 1
 rationalMasIdx = [4,100,150]
 filePath = "/home/cewinharhar/GITHUB/gaesp/data/processed/3D_pred/testRun/aKGD_FE_oxo.cif"
+url = "http://0.0.0.0:9999/deepMut"
 
 # -------------  DeepMut -----------------
 #INIT WITH WILDTYPE
-
-deepMutOutput = main_deepMut(
-                    inputSeq            = mutants.wildTypeAASeq,
+payload = dict(
+                    inputSeq            = [x for x in mutants.wildTypeAASeq],
                     task                = "rational",
                     rationalMaskIdx     = rationalMasIdx ,
-                    model               = None,
-                    tokenizer           = None,
                     huggingfaceID       = "Rostlab/prot_t5_xl_uniref50",
-                    paramSet            = "",
-                    num_return_sequences= 1,
+                    num_return_sequences= 5,
                     max_length          = 512,
                     do_sample           = True,
                     temperature         = 1.5,
                     top_k               = 20
-                )
+
+)
+
+#make json
+package = prepare4APIRequest(payload)
+
+try:
+    response = requests.post(url, json=package).content.decode("utf-8")
+    deepMutOutput = json.loads(response)
+
+except requests.exceptions.RequestException as e:
+    errMes = "Something went wrong\n" + str(e)
+    print(errMes)
+    pass
+
 
 #add the newly generated mutants
 for mutantIterate in deepMutOutput:
@@ -135,18 +162,20 @@ for mutantIterate in deepMutOutput:
     )
 
 
-print(mutant.generationDict[1])
+pprint(mutants.generationDict)
+
 
 # -------------  PYROPROLEX: pyRosetta-based protein relaxation -----------------
 
 #TODO start with this pipeline
 #TODO Maybe consider to use open source pymol for this https://pymolwiki.org/index.php/Optimize
 #relaxes the mutants and stores the results in the mutantClass
+#TODO add filepath of newly generated mutatn
 main_pyroprolex()
 
 # -------------  GAESP: GPU-accelerated Enzyme Substrate docking pipeline -----------------
 
-main_gaesp(generation=generation, mutantClass_=mutantClass, config=config)
+main_gaesp(generation=generation, mutantClass_ = mutants, config=config)
 
 # -------------  RESIDORA: Residue selector incorporating docking results-affinity-----------------
 
