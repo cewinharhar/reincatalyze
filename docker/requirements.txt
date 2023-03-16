@@ -1,0 +1,7 @@
+pandas
+numpy
+transformers
+torch
+uvicorn
+fastapi
+sentencepiece
