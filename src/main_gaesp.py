@@ -51,6 +51,7 @@ from src.mutantClass import mutantClass
 from src.gaespHelpers.logRun import logRun
 from src.gaespHelpers.prepareReceptors import prepareReceptors
 from src.gaespHelpers.extractTableFromVinaOutput import extractTableFromVinaOutput
+from src.gaespHelpers.getTargetCarbonIDFromMol2File import getTargetCarbonIDFromMol2File
 from src.gaespHelpers.calculateDistanceFromTargetCarbonToFe import calculateDistanceFromTargetCarbonToFe
 
 ########################################################
@@ -88,9 +89,7 @@ def main_gaesp(generation : int, mutantClass_ : mutantClass, config : configObj)
         sx =  sy = sz = 20
 
         #--------------------------------------------------------
-        #check if docking folder exists, if no create
         
-
         print(f"Preparing for Docking: \n (Benjamin... time to wake up)")
         #get ligand
         for ligandNr, ligand4Cmd in enumerate([pj(config.ligand_files, f"ligand_{str(nr+1)}.pdbqt") for nr in range(len(config.ligand_df))]):
@@ -108,29 +107,31 @@ def main_gaesp(generation : int, mutantClass_ : mutantClass, config : configObj)
             vina_docking=f"{config.vina_gpu_cuda_path} --thread {config.thread} --receptor {receptor} --ligand {ligand4Cmd} \
                             --seed 42 --center_x {cx} --center_y {cy} --center_z {cz}  \
                             --size_x {sx} --size_y {sy} --size_z {sz} \
-                            --out {ligandOutPath} --num_modes 3"
+                            --out {ligandOutPath} --num_modes {config.num_modes}"
             #os.system(vina_docking)
             #run command
             ps = subprocess.Popen([vina_docking],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
             stdout, stderr = ps.communicate()
 
             try:
-                #extract reuslts from vina docking
+                #extract results from vina docking
                 vinaOutput = extractTableFromVinaOutput(stdout.decode())
                 print(f" \n Docking successfull!! \n \n {vinaOutput}", end = "\r")
             except Exception as err:
                 print(err)
 
             try:
-                #split the vina output pdbqt file into N single files each with one pose
-                splitDockRes = f"""obabel {ligandOutPath} -O {ligandOutPath.replace(".pdbqt", "_.pdbqt")} -m"""
+                #split the vina output pdbqt file into N single files each with one pose (done with the -m flag)
+                splitDockRes = f"""obabel {ligandOutPath} -O {ligandOutPath.replace(".pdbqt", "_.mol2")} -m"""
                 ps = subprocess.Popen([splitDockRes],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
                 stdout, stderr = ps.communicate()
             except Exception as err:
                 print(err)
 
-            
-            distances = calculateDistanceFromTargetCarbonToFe(receptorPath = receptor, ligandPath = ligandOutPath)
+            targetCarbonID = getTargetCarbonIDFromMol2File(ligandOutPath)
+            distances = calculateDistanceFromTargetCarbonToFe(
+                receptorPath = receptor, ligandPath = ligandOutPath, 
+                targetCarbonID = targetCarbonID, num_modes = config.num_modes)
 
             vinaOutput["distTargetCarbonToFE"] = distances
 

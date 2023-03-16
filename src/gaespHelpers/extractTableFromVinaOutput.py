@@ -22,7 +22,7 @@ def extractTableFromVinaOutput(output : str):
     table_end = None
     for idx, findEnd in enumerate(lines[table_start:]):
         if findEnd == "Writing output ... done.":
-            table_end = table_start + idx -1
+            table_end = table_start + idx
     
     # If the table end line was not found, return None
     if table_end is None:

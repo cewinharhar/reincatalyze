@@ -86,11 +86,9 @@ subSmiles = ['CC(=O)CCc1ccccc1', 'OC(=O)CCc1ccccc1', 'COc1cccc(CCC(O)=O)c1', 'CO
 #---------------------------------------------
 #PREPARE THEM LIGANDS
 config = prepareLigand4Vina(smiles = subSmiles, config = config)
+print("Ligands are stored in: {config.ligand_files}")
 #---------------------------------------------
 
-print(config.ligand_files)
-
-#TODO make sure that if conifg is given in function but not returned in a automated approach, that info is stored
 #Create dataframe and store in config
 ligand2Df(
     subName=subName,
@@ -102,7 +100,6 @@ ligand2Df(
 print(config.ligand_df) 
 #------------  Receptor  ------------------
 aKGD31 = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
-aKGD31Mut = "MTSETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
 
 #Initialize the mutantClass
 mutants = mutantClass(
@@ -150,7 +147,6 @@ except requests.exceptions.RequestException as e:
 
 
 #add the newly generated mutants
-
 for mutantIterate in deepMutOutput:
     mutants.addMutant(
         generation  = generation,
@@ -171,27 +167,12 @@ pprint(mutants.generationDict)
 
 main_pyroprolex()
 
-#remove
-mutants.generationDict[1]["19a1cb7e1fca4a96580f36230a6ded04729e4667"]["filePath"] = "/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/19a1cb7e1fca4a96580f36230a6ded04729e4667.cif"
+#TODO remove
+mutants.generationDict[1]["cb94692156241358eaac754159b5a9c67433016f"]["filePath"] = "/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/cb94692156241358eaac754159b5a9c67433016f.cif"
 
 # -------------  GAESP: GPU-accelerated Enzyme Substrate docking pipeline -----------------
 
 main_gaesp(generation=generation, mutantClass_ = mutants, config=config)
-
-#try to get distances
-from pymol import cmd as pycmd
-pycmd.reinitialize()
-
-pycmd.load("data/processed/3D_pred/test/19a1cb7e1fca4a96580f36230a6ded04729e4667.pdbqt")
-pycmd.load("data/processed/docking_pred/test/poses1.pdbqt")
-
-pycmd.select("ligandAtom", "resname UNL and id 7")
-pycmd.select("ironAtom", "name FE")
-
-pycmd.distance("tmp", "ligandAtom", "ironAtom")
-
-
-dir(pycmd)
 
 # -------------  RESIDORA: Residue selector incorporating docking results-affinity-----------------
 

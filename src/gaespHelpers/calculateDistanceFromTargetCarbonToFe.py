@@ -2,7 +2,7 @@ from pymol import cmd as pycmd
 from typing import List
 def calculateDistanceFromTargetCarbonToFe(
         receptorPath : str, ligandPath : str, 
-        ligandEnding : List = ["1","2","3"], 
+        num_modes : List = 5, 
         targetCarbonID : int = 7, resname : str = "UNL",
         metalType = "FE"
         ):
@@ -12,8 +12,8 @@ def calculateDistanceFromTargetCarbonToFe(
 
     dis = []
 
-    for en in ligandEnding:
-        posePath = ligandPath.replace(".pdbqt", f"_{en}.pdbqt")
+    for en in range(num_modes):
+        posePath = ligandPath.replace(".pdbqt", f"_{str(en+1)}.mol2")
 
         pycmd.reinitialize()
 

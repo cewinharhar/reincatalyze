@@ -24,7 +24,7 @@ class configObj:
         align=False,
         output_formate="pdbqt",
         # nr of states
-        num_modes=9,
+        num_modes=5,
         # patients
         exhaustiveness=3,
         # How different do the states have to be to be "different"
