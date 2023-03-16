@@ -14,10 +14,10 @@ from src.mainHelpers.prepareLigand4Vina import prepareLigand4Vina
 from src.mainHelpers.ligand2Df import ligand2Df
 from src.mainHelpers.prepare4APIRequest import prepare4APIRequest
 
-from src.main_deepMut import main_deepMut
-from src.main_pyroprolex import main_pyroprolex
+#from src.main_deepMut import main_deepMut
+#from src.main_pyroprolex import main_pyroprolex
 from src.main_gaesp import main_gaesp
-from src.main_residora import main_residora
+#from src.main_residora import main_residora
 
 #external
 import pandas as pd
@@ -26,9 +26,6 @@ import pandas as pd
 # ------------------------------------------------
 #               CONFIGURATION
 # ------------------------------------------------
-
-#Create runID
-dir(datetime)
 
 #runID = datetime.datetime.now().strftime("%d-%b-%Y_%H:%M")
 runID = datetime.datetime.now().strftime("%d-%b-%Y")
@@ -102,7 +99,7 @@ ligand2Df(
     config=config
 )
 
- 
+print(config.ligand_df) 
 #------------  Receptor  ------------------
 aKGD31 = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
 aKGD31Mut = "MTSETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
@@ -121,8 +118,8 @@ mutants = mutantClass(
 #TODO make this iteratevly and input is json
 generation = 1
 rationalMasIdx = [4,100,150]
-filePath = "/home/cewinharhar/GITHUB/gaesp/data/processed/3D_pred/testRun/aKGD_FE_oxo.cif"
-url = "http://0.0.0.0:9999/deepMut"
+filePath = "/home/cewinharhar/GITHUB/gaesp/data/raw/aKGD_FE_oxo.cif"
+url = "http://0.0.0.0/deepMut"
 
 # -------------  DeepMut -----------------
 #INIT WITH WILDTYPE
@@ -131,7 +128,7 @@ payload = dict(
                     task                = "rational",
                     rationalMaskIdx     = rationalMasIdx ,
                     huggingfaceID       = "Rostlab/prot_t5_xl_uniref50",
-                    num_return_sequences= 5,
+                    num_return_sequences= 1,
                     max_length          = 512,
                     do_sample           = True,
                     temperature         = 1.5,
@@ -153,12 +150,12 @@ except requests.exceptions.RequestException as e:
 
 
 #add the newly generated mutants
+
 for mutantIterate in deepMutOutput:
     mutants.addMutant(
         generation  = generation,
         AASeq       = mutantIterate,
-        mutRes      = rationalMasIdx,
-        filePath    = filePath
+        mutRes      = rationalMasIdx
     )
 
 
@@ -170,14 +167,41 @@ pprint(mutants.generationDict)
 #TODO start with this pipeline
 #TODO Maybe consider to use open source pymol for this https://pymolwiki.org/index.php/Optimize
 #relaxes the mutants and stores the results in the mutantClass
-#TODO add filepath of newly generated mutatn
+#TODO add filepath of newly generated mutants 3D structure
+
 main_pyroprolex()
+
+#remove
+mutants.generationDict[1]["19a1cb7e1fca4a96580f36230a6ded04729e4667"]["filePath"] = "/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/19a1cb7e1fca4a96580f36230a6ded04729e4667.cif"
 
 # -------------  GAESP: GPU-accelerated Enzyme Substrate docking pipeline -----------------
 
 main_gaesp(generation=generation, mutantClass_ = mutants, config=config)
 
+#try to get distances
+from pymol import cmd as pycmd
+pycmd.reinitialize()
+
+pycmd.load("data/processed/3D_pred/test/19a1cb7e1fca4a96580f36230a6ded04729e4667.pdbqt")
+pycmd.load("data/processed/docking_pred/test/poses1.pdbqt")
+
+pycmd.select("ligandAtom", "resname UNL and id 7")
+pycmd.select("ironAtom", "name FE")
+
+pycmd.distance("tmp", "ligandAtom", "ironAtom")
+
+
+dir(pycmd)
+
 # -------------  RESIDORA: Residue selector incorporating docking results-affinity-----------------
 
 main_residora()
  
+
+""" pycmd.load("/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/0309170a469d8622a1064258796cbc3f88bd5ef5.cif")
+pycmd.save("/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/0309170a469d8622a1064258796cbc3f88bd5ef5.pdb") 
+
+command = f'~/ADFRsuite-1.0/bin/prepare_receptor -r /home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/0309170a469d8622a1064258796cbc3f88bd5ef5.pdb \
+            -o /home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/0309170a469d8622a1064258796cbc3f88bd5ef5.pdb -A hydrogens -v -U nphs_lps_waters'  # STILL NEED TO FIGURE OUT HOW TO ACCEPT ALPHAFILL DATA
+
+ """

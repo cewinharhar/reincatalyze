@@ -12,7 +12,7 @@ class mutantClass:
         self.ligand_smiles = ligand_df["ligand_smiles"].tolist()
 
     def addMutant(
-        self, generation: int, AASeq: str, mutRes: List, filePath: str
+        self, generation: int, AASeq: str, mutRes: List
     ):
         assert isinstance(generation, int)
         assert isinstance(AASeq, str)
@@ -29,7 +29,7 @@ class mutantClass:
         #create dict with empty entries for dockingResults
         dockingResultsEmpty = {key: dict() for key in self.ligand_smiles}
         # create subdict of mutant with AAseq and mutated residuals
-        mutDict = dict(AASeq=AASeq, mutRes=mutRes, filePath=filePath, dockingResults = dockingResultsEmpty)
+        mutDict = dict(AASeq=AASeq, mutRes=mutRes, dockingResults = dockingResultsEmpty)
         # add subdict to mutant dict
         self.generationDict[generation][mutID] = mutDict
 

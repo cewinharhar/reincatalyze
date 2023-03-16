@@ -1,3 +1,5 @@
+import os
+from os.path import join  as pj
 class configObj:
     def __init__(
         self,
@@ -49,3 +51,11 @@ class configObj:
         self.num_modes=9
         self.exhaustiveness=3
         self.energy_range=3
+
+        #create paths if not already exist
+        for pa in ["3D_pred", "docking_pred"]:
+            tmp = pj(self.data_dir, "processed", pa, self.runID)
+            isExist = os.path.exists(tmp)
+            if not isExist:
+                # Create a new directory because it does not exist
+                os.makedirs(tmp)  

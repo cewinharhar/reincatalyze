@@ -19,12 +19,15 @@ import matplotlib.pyplot as plt
 import numpy
 import numpy as np
 import pandas as pd
+
 import pymol
-from biopandas.mol2 import PandasMol2, split_multimol2
+from pymol import cmd as pycmd
+
+
+""" from biopandas.mol2 import PandasMol2, split_multimol2
 from biopandas.pdb import PandasPdb
-from natsort import natsorted
-from pymol.cgo import *
-from pymol.cgo import cmd as pycmd
+from natsort import natsorted """
+
 # We suppres stdout from invalid smiles and validations
 from rdkit import Chem, DataStructs, rdBase
 from rdkit.Chem import QED, AllChem, Descriptors, rdMolDescriptors
@@ -48,60 +51,16 @@ from src.mutantClass import mutantClass
 from src.gaespHelpers.logRun import logRun
 from src.gaespHelpers.prepareReceptors import prepareReceptors
 from src.gaespHelpers.extractTableFromVinaOutput import extractTableFromVinaOutput
+from src.gaespHelpers.calculateDistanceFromTargetCarbonToFe import calculateDistanceFromTargetCarbonToFe
 
 ########################################################
 #                   Preparation
 ########################################################
 
-""" #what comes in the final pipe function
-generation = 1
-aKGD31Mut = "MTSETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
-mutRes = [1, 2] """
 # ------------------------------------------------
 #               CONFIGURATION
 # ------------------------------------------------
 
-""" log_dir = pj(os.getcwd(), "log/docking")
-config.log_dir = log_dir
-
-# Create log file
-if not os.path.exists(pj(config.log_dir, config.runID)):
-    logPath = pj(config.log_dir, config.runID)
-    os.mkdir(logPath)
-
-    log_file_path = pj(
-        logPath, "LOG_" + datetime.date.today().__str__() + "docking.txt"
-    )
-    logHeader = (
-        f"Log of docking approach \n date: {datetime.date.today().__str__()}"
-    )
-    print(log_file_path)
-    logRun(log_file_path, logHeader)
-    logRun(log_file_path, "substances_db: " + str(config.mol2_files))
-    logRun(log_file_path, "center_coordinates: " + str(config.center))
-    logRun(log_file_path, "box size in angström: " + str(config.size))
-    logRun(log_file_path, "num_modes: " + str(config.num_modes))
-    logRun(log_file_path, "exhaustiveness: " + str(config.exhaustiveness))
-    logRun(log_file_path, "energy_range: " + str(config.energy_range))
-    logRun(log_file_path, "output_formate: " + config.output_formate)
-    logRun(log_file_path, "metal containing: " + str(config.metal_containing))
- """
-
-
-# ------------------------------------------------
-#               MUTANT CLASS
-# ------------------------------------------------
-
-"https://alphafold.ebi.ac.uk/files/AF-A0A2G1XAR5-F1-model_v4.pdb"
-
-""" mutant.addMutant(
-    generation=generation,
-    AASeq=aKGD31Mut,
-    mutRes=mutRes,
-    filePath=filePath,
-)
-
-print(mutant.generationDict[1]) """
 # ------------------------------------------------
 
 def main_gaesp(generation : int, mutantClass_ : mutantClass, config : configObj):
@@ -122,45 +81,58 @@ def main_gaesp(generation : int, mutantClass_ : mutantClass, config : configObj)
         # mutantID = "da446dfe3ac489d00c80dc10386e4b8bb1bcbb4c"
 
         #Extract information before docking 
-        prot = mutantClass_.generationDict[generation][mutantID]["filePath"]
+        receptor = mutantClass_.generationDict[generation][mutantID]["filePath"]
         #TODO check if outPath is correct in 3D_pred, shouldnt it be in dockignpred?
         outPath = pj(config.data_dir, "processed/3D_pred", config.runID) 
         cx, cy, cz = mutantClass_.generationDict[generation][mutantID]["centerCoord"]
         sx =  sy = sz = 20
 
         #--------------------------------------------------------
+        #check if docking folder exists, if no create
+        
 
         print(f"Preparing for Docking: \n (Benjamin... time to wake up)")
         #get ligand
-        for ligandNr, ligand4Cmd in enumerate([pj(config.ligand_files, f"ligand_{str(nr)}.pdbqt") for nr in range(len(config.ligand_df))]):
+        for ligandNr, ligand4Cmd in enumerate([pj(config.ligand_files, f"ligand_{str(nr+1)}.pdbqt") for nr in range(len(config.ligand_df))]):
             
             #extract ligand smiles to store in the dockingresults in the mutantClass
-            ligandNrInSmiles = config.ligand_df[["ligand_smiles"]][ligandNr]
-            
-            #TODO remove
-            ligandNrInSmiles = "CC(=O)CCc1ccc2OCOc2c1"
+            ligandNrInSmiles = config.ligand_df.ligand_smiles.tolist()[ligandNr]
 
             print(f"Docking ligand {ligandNr + 1}/{len(config.ligand_df)}", end = "\r")
             #lig4cmd = lig4cmd.replace("9.pdbqt", "1.pdbqt")
 
             #define output path for ligand docking results
-            ligandOutPath = pj(config.data_dir, "processed", "docking_pred", config.runID, f"ligand_{str(ligandNr+1)}.{config.output_formate}")
+            ligandOutPath = pj(config.data_dir, "processed", "docking_pred", config.runID, f"{mutantID}_ligand_{str(ligandNr+1)}.{config.output_formate}")
 
             #you could add --exhaustiveness 32 for more precise solution
-            vina_docking=f"{config.vina_gpu_cuda_path} --thread {config.thread} --receptor {prot} --ligand {ligand4Cmd} \
+            vina_docking=f"{config.vina_gpu_cuda_path} --thread {config.thread} --receptor {receptor} --ligand {ligand4Cmd} \
                             --seed 42 --center_x {cx} --center_y {cy} --center_z {cz}  \
                             --size_x {sx} --size_y {sy} --size_z {sz} \
-                            --out {ligandOutPath}"
+                            --out {ligandOutPath} --num_modes 3"
             #os.system(vina_docking)
             #run command
             ps = subprocess.Popen([vina_docking],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
             stdout, stderr = ps.communicate()
 
             try:
+                #extract reuslts from vina docking
                 vinaOutput = extractTableFromVinaOutput(stdout.decode())
                 print(f" \n Docking successfull!! \n \n {vinaOutput}", end = "\r")
             except Exception as err:
                 print(err)
+
+            try:
+                #split the vina output pdbqt file into N single files each with one pose
+                splitDockRes = f"""obabel {ligandOutPath} -O {ligandOutPath.replace(".pdbqt", "_.pdbqt")} -m"""
+                ps = subprocess.Popen([splitDockRes],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+                stdout, stderr = ps.communicate()
+            except Exception as err:
+                print(err)
+
+            
+            distances = calculateDistanceFromTargetCarbonToFe(receptorPath = receptor, ligandPath = ligandOutPath)
+
+            vinaOutput["distTargetCarbonToFE"] = distances
 
             #save results in corresponding mutantclass subdict
             mutantClass_.addDockingResult(

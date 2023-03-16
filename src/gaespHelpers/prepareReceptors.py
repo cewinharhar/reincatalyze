@@ -2,7 +2,8 @@ from src.mutantClass import mutantClass
 from pymol.cgo import cmd as pycmd
 from src.configObj import configObj  
 import subprocess
-
+import copy
+ 
 def prepareReceptors(runID: str, generation: int, mutantClass_: mutantClass, config : configObj):
     """
     Prepare receptor files for molecular docking.
@@ -20,7 +21,7 @@ def prepareReceptors(runID: str, generation: int, mutantClass_: mutantClass, con
     same directory as the original pdb file. If the receptor contains a metal, the coordinates of the 
     metal are identified and stored in the mutantClass instance for later use.
     """    
-    
+
     # Load file location NOT USED BECAUS WE USE MUTANTCLASS
     # if not mutantClass_:
     #    all_receptors=[]
@@ -39,10 +40,12 @@ def prepareReceptors(runID: str, generation: int, mutantClass_: mutantClass, con
         
         #if cif file, resave as pdb via pymol
         if mutantClass_.generationDict[generation][mutID]["filePath"].endswith(".cif"):
+            print("cif file found, trying to convert")
             newName = mutantClass_.generationDict[generation][mutID]["filePath"].replace(".cif", ".pdb")
             pycmd.reinitialize()
             pycmd.load(mutantClass_.generationDict[generation][mutID]["filePath"])
             pycmd.save(newName)
+            print("CIF to pdb was successfull")
             mutantClass_.generationDict[generation][mutID]["filePath"] = newName
             pycmd.reinitialize()
 

@@ -93,4 +93,6 @@ target/
 # Data and models
 data/*/*
 models/*
+docker/app/*/*
+*.bin
 !.gitkeep

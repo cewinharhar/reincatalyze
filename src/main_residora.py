@@ -1,13 +1,24 @@
 def main_residora():
-
-
-    
     return
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
+
+
+"""
+The task you described can be tackled using a Deep Reinforcement Learning (DRL) approach called policy gradient. 
+In this approach, we train an agent to learn a policy that maps the input sequence of amino acids to a probability distribution over the characters in the sequence. 
+The agent then samples a new sequence of amino acids from this distribution and feeds it into the reward function. 
+The agent receives a reward based on the output of the reward function and uses this reward to update its policy.
+
+To implement this approach, we first need to define the reward function and the policy network. 
+For simplicity, let's assume that the reward function takes a sequence of amino acids as input and outputs a scalar reward value. 
+The policy network takes a sequence of amino acids as input and outputs a probability distribution over the characters in the sequence.
+
+Here's a Python script that implements the policy gradient approach for the task you described:
+"""
 
 # Define the reward function
 def reward_function(sequence):
@@ -73,4 +84,4 @@ def train(num_episodes, sequence_length, hidden_size, lr):
 amino_acids = 'ACDEFGHIKLMNPQRSTVWY'
 
 # Train the policy network
-train(num_episodes=1000, sequence_length=10, hidden_size=32, lr=0.001)
+#train(num_episodes=1000, sequence_length=10, hidden_size=32, lr=0.001)
