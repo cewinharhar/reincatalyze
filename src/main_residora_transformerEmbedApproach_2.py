@@ -1,127 +1,107 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
 import numpy as np
-from transformers import AutoTokenizer, AutoModel
-import tensorflow as tf
-from tensorflow.keras.layers import Dense, Input, Flatten
-from tensorflow.keras.models import Model
 
-# Define the DQN agent class
-class DQNAgent:
-    def __init__(self, state_size, action_size):
-        self.state_size = state_size
-        self.action_size = action_size
-        self.memory = []
-        self.gamma = 0.95    # Discount rate
-        self.epsilon = 1.0   # Exploration rate
-        self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
-        self.learning_rate = 0.001
-        self.model = self._build_model()
+"""
+In this implementation, the Policy class defines a simple neural network policy with two fully connected layers, 
+and the ReinforcementLearningAgent class encapsulates the agent's policy and optimization algorithm.
+The select_action method takes a state as input and returns an action selected from the policy based on the given state.
+The update_policy method takes a list of rewards and corresponding log probabilities of actions, 
+and computes the gradient of the expected cumulative reward with respect to the policy parameters using the policy gradient method. 
+The gradient is then used to update the policy parameters using the Adam optimizer.Finally, the main method runs a fixed number of episodes, 
+where each episode consists of selecting actions based on the current policy, receiving rewards from the environment, 
+and updating the policy parameters based on the received rewards and log probabilities.Note that in this example, 
+the environment is simulated by randomly changing the values of certain positions in a random vector
 
-    def _build_model(self):
-        # Neural network for Q-learning
-        inputs = Input(shape=(self.state_size,))
-        x = Dense(64, activation='relu')(inputs)
-        x = Dense(64, activation='relu')(x)
-        x = Dense(self.action_size, activation='linear')(x)
-        model = Model(inputs=inputs, outputs=x)
-        model.compile(loss='mse', optimizer=tf.keras.optimizers.Adam(lr=self.learning_rate))
-        return model
+"""
+class PolicyREINFORCE(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim):
+        super(PolicyREINFORCE, self).__init__()
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, output_dim)
 
-    def remember(self, state, action, reward, next_state, done):
-        # Memory for experience replay
-        self.memory.append((state, action, reward, next_state, done))
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = torch.softmax(self.fc2(x), dim=-1)
+        return x
+    
+class PolicyTRANSFORMER(nn.Module):
+    def __init__(self, transformer_model, hidden_dim, output_dim):
+        super(PolicyTRANSFORMER, self).__init__()
+        self.transformer = transformer_model
+        self.fc1 = nn.Linear(transformer_model.config.hidden_size, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, output_dim)
 
-    def act(self, state):
-        # Choose an action based on epsilon-greedy policy
-        if np.random.rand() <= self.epsilon:
-            return np.random.choice(self.action_size)
-        else:
-            return np.argmax(self.model.predict(state)[0])
+    def forward(self, x):
+        x = self.transformer(x).last_hidden_state[:, 0, :]
+        x = torch.relu(self.fc1(x))
+        x = torch.softmax(self.fc2(x), dim=-1)
+        return x
+    
 
-    def replay(self, batch_size):
-        # Experience replay
-        if len(self.memory) < batch_size:
-            return
-        minibatch = np.random.choice(self.memory, batch_size, replace=False)
-        for state, action, reward, next_state, done in minibatch:
-            target = reward
-            if not done:
-                target = reward + self.gamma * np.amax(self.model.predict(next_state)[0])
-            target_f = self.model.predict(state)
-            target_f[0][action] = target
-            self.model.fit(state, target_f, epochs=1, verbose=0)
 
-# Load the BERT model and tokenizer
-bert_model = AutoModel.from_pretrained('bert-base-uncased')
-tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
-seq_len = 300
+class RLAgent:
+    def __init__(self, Policy, input_dim, hidden_dim, output_dim, learning_rate, gamma):
+        self.policy = Policy(input_dim, hidden_dim, output_dim)
+        self.optimizer = optim.Adam(self.policy.parameters(), lr=learning_rate)
+        self.gamma = gamma
+    def select_action(self, state):
+        state = torch.from_numpy(state).float().unsqueeze(0)
+        probs = self.policy(state)
+        action = torch.multinomial(probs, 1)
+        return action.item()
+    def update_policy(self, rewards, log_probs):
+        discounted_rewards = []
+        R = 0
+        for r in rewards[::-1]:
+            R = r + self.gamma * R
+            discounted_rewards.insert(0, R)
+            
+        discounted_rewards = torch.tensor(discounted_rewards)
+        discounted_rewards = (discounted_rewards - discounted_rewards.mean()) / (discounted_rewards.std() + 1e-9)
+        policy_loss = []
+        for log_prob, reward in zip(log_probs, discounted_rewards):
+            policy_loss.append(-log_prob * reward)
+            self.optimizer.zero_grad()
+            policy_loss = torch.cat(policy_loss).sum()
+            policy_loss.backward()
+            self.optimizer.step()
 
-# Define the reward function
-def reward_func(seq, pos):
-    """
-    Returns two float values as the rewards for the given position in the sequence.
-    The first value is the predicted binding affinity and the second value is the predicted stability change.
-    """
-    # TODO: Implement your reward function here
-    return 0.0, 0.0
+def main(Policy = PolicyREINFORCE):
+    # Define the environment
+    input_dim = 10
+    output_dim = 4
+    # Define the agent
+    agent = RLAgent(Policy = Policy, input_dim = input_dim, hidden_dim = 64, output_dim = output_dim, learning_rate = 1e-2, gamma = 0.99)
+    # Run the episodes
+    num_episodes = 1000
 
-# Define the function to encode the sequence using BERT
-def encode_seq(seq):
-    """
-    Returns the embedding vector for the given sequence using the BERT model.
-    """
-    # Tokenize the sequence
-    input_ids = tokenizer.encode(seq, add_special_tokens=True, max_length=seq_len, pad_to_max_length=True)
-    input_ids = np.array(input_ids).reshape(1,-1)
+    for episode in range(num_episodes):
+        state = np.random.rand(input_dim)
+        rewards = []
+        log_probs = []
+        for step in range(20):
+            action = agent.select_action(state)
+            state[action] += np.random.normal(0, 0.1)
+            reward = np.random.rand(2)
+            rewards.append(reward)
+            log_probs.append(torch.log(agent.policy(torch.from_numpy(state).float())[action]))
+        agent.update_policy(rewards, log_probs)
 
-    # Encode the sequence using BERT
-    inputs = {'input_ids': input_ids}
-    outputs = bert_model(inputs)
-    last_hidden_states = outputs.last
-    # Extract the embedding vector
-    embedding = last_hidden_states[0][0][1:-1].numpy()
 
-    return embedding
+main(Policy = PolicyREINFORCE)
 
-# Define the function to update the sequence
-def update_seq(seq, pos, aa):
-    """
-    Updates the given position in the sequence with the given amino acid.
-    """
-    seq_list = list(seq)
-    seq_list[pos] = aa
-    new_seq = "".join(seq_list)
+if __name__ == '__main__':
+    main()
 
-    return new_seq
 
-# Define the RL agent and initialize the environment
-state_size = bert_model.config.hidden_size
-action_size = seq_len
-agent = DQNAgent(state_size, action_size)
-seq = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
-pos = 0
 
-# Start the training loop
-batch_size = 32
-for episode in range(1000):
-    embedding = encode_seq(seq)
-    action = agent.act(embedding)
-    aa = chr(np.random.randint(65, 91))   # Choose a random amino acid
-    new_seq = update_seq(seq, pos, aa)
-    reward1, reward2 = reward_func(new_seq, pos)
-    if reward1 != 0.0 or reward2 != 0.0:
-        done = True
-    else:
-        done = False
-    next_embedding = encode_seq(new_seq)
-    agent.remember(embedding, action, [reward1, reward2], next_embedding, done)
-    seq = new_seq
-    pos += 1
-    if pos == seq_len:
-        pos = 0
-    agent.replay(batch_size)
-    if agent.epsilon > agent.epsilon_min:
-        agent.epsilon *= agent.epsilon_decay
+#------------------------------------------
 
-# Print the final sequence
-print(seq)
+input_dim = 10
+output_dim = 4
+
+agent = RLAgent(Policy = PolicyREINFORCE, input_dim = input_dim, hidden_dim = 64, output_dim = output_dim, learning_rate = 1e-2, gamma = 0.99)
+
+state = np.random.rand(input_dim)

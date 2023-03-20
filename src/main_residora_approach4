@@ -1,0 +1,104 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import numpy as np
+from transformers import AutoTokenizer, AutoModel, AutoModelForSeq2SeqLM, T5Tokenizer
+
+class Policy(nn.Module):
+    def __init__(self, device, input_dim, hidden_dim, output_dim, model_name):
+        super(Policy, self).__init__()
+        self.tokenizer = T5Tokenizer.from_pretrained(model_name)
+        self.encoder = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(device)
+        self.fc1 = nn.Linear(self.encoder.config.hidden_size, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, output_dim)
+    
+    def forward(self, x):
+        x = self.tokenizer(x, padding=True, truncation=True, return_tensors='pt')
+        x = self.encoder(**x)[0][:, 0, :]
+        x = torch.relu(self.fc1(x))
+        x = torch.softmax(self.fc2(x), dim=-1)
+        return x
+
+class ReinforcementLearningAgent:
+    def __init__(self, device, input_dim, hidden_dim, output_dim, model_name, learning_rate, gamma):
+        self.policy = Policy(device = device, input_dim = input_dim, hidden_dim = hidden_dim, output_dim=output_dim, model_name=model_name)
+        self.optimizer = optim.Adam(self.policy.parameters(), lr=learning_rate)
+        self.gamma = gamma
+    
+    def select_action(self, state):
+        probs = self.policy(state)
+        action = torch.multinomial(probs, 1)
+        return action.item()
+    
+    def update_policy(self, rewards, log_probs):
+        discounted_rewards = []
+        R = 0
+        for r in rewards[::-1]:
+            R = r + self.gamma * R
+            discounted_rewards.insert(0, R)
+        discounted_rewards = torch.tensor(discounted_rewards)
+        discounted_rewards = (discounted_rewards - discounted_rewards.mean()) / (discounted_rewards.std() + 1e-9)
+        policy_loss = []
+
+        for log_prob, reward in zip(log_probs, discounted_rewards):
+            policy_loss.append(-log_prob * reward)
+        self.optimizer.zero_grad()
+        policy_loss = torch.cat(policy_loss).sum()
+        policy_loss.backward()
+        self.optimizer.step()
+
+def main():
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu') 
+    # Define the environment
+    input_dim = 100 # Length of amino acid sequence
+    output_dim = 20 # Number of amino acids
+    LEARNING_RATE = 0.001
+    DISCOUNT_FACTOR = 0.99
+
+    # Define the agent
+    model_name = 'Rostlab/prot_t5_xl_uniref50'
+
+    agent = ReinforcementLearningAgent(device = device,
+                                       input_dim = input_dim, 
+                                        hidden_dim = 64, 
+                                        output_dim = output_dim, 
+                                        model_name = model_name, 
+                                        learning_rate = LEARNING_RATE, 
+                                        gamma = DISCOUNT_FACTOR)
+    
+
+    
+    # Run the episodes
+    num_episodes = 10
+    for episode in range(num_episodes):
+        state = 'ACDEFGHIKLMNPQRSTVWY' * (input_dim // 20) # Random initial amino acid sequence
+        rewards = []
+        log_probs = []
+        for step in range(20):
+            action = agent.select_action(state)
+            new_state = list(state)
+            new_state[action] = np.random.choice(list('ACDEFGHIKLMNPQRSTVWY')) # Randomly change amino acid at selected position
+            new_state = ''.join(new_state)
+            reward = np.random.rand(2)
+            rewards.append(reward)
+            log_probs.append(torch.log(agent.policy(new_state)))
+            state = new_state
+        agent.update_policy(rewards, log_probs)
+
+if _name_ == '_main_':
+    main()
+
+
+aa = list("ACDEFGHIKLMNPQRSTVWY")
+aaTok = agent.policy.tokenizer(aa, max_length = 512, truncation = True, padding = True, add_special_tokens = True, return_tensors = "pt")
+
+out_ = agent.policy.encoder(input_ids = aaTok["input_ids"], attention_mask = aaTok["attention_mask"])
+
+
+
+
+
+
+model = AutoModelForSeq2SeqLM.from_pretrained("Rostlab/prot_t5_xl_uniref50").to(device)
+
+
