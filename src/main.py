@@ -116,8 +116,9 @@ mutants = mutantClass(
 generation = 1
 rationalMasIdx = [4,100,150]
 filePath = "/home/cewinharhar/GITHUB/gaesp/data/raw/aKGD_FE_oxo.cif"
-deepMutUrl = "http://0.0.0.0/deepMut"
+deepMutUrl = "http://0.0.0.0:9999/deepMut"
 embeddingUrl = "http://0.0.0.0:9999/embedding"
+nrOfSequences = 1
 
 #-----------------------------------------
 # -------------  DeepMut -----------------
@@ -127,7 +128,7 @@ payload = dict(
                     task                = "rational",
                     rationalMaskIdx     = rationalMasIdx ,
                     huggingfaceID       = "Rostlab/prot_t5_xl_uniref50",
-                    num_return_sequences= 1,
+                    num_return_sequences= nrOfSequences,
                     max_length          = 512,
                     do_sample           = True,
                     temperature         = 1.5,
@@ -151,7 +152,7 @@ except requests.exceptions.RequestException as e:
 #---------------------------------------
 #get embeddings
 #---------------------------------------
-deepMutOutput = ["MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"]
+#deepMutOutput = ["MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"]
 
 payload2 = dict(inputSeq = deepMutOutput)
 
@@ -160,7 +161,7 @@ package2 = prepare4APIRequest(payload2)
 
 try:
     response = requests.post(embeddingUrl, json=package2).content.decode("utf-8")
-    deepMutOutput = json.loads(response)    
+    embedding = json.loads(response)    
 except requests.exceptions.RequestException as e:
     errMes = "Something went wrong\n" + str(e)
     print(errMes)
@@ -168,15 +169,16 @@ except requests.exceptions.RequestException as e:
 
 #---------------------------------------
 #add the newly generated mutants
-for mutantIterate in deepMutOutput:
+for i in range(nrOfSequences):
     mutants.addMutant(
         generation  = generation,
-        AASeq       = mutantIterate,
+        AASeq       = deepMutOutput[i],
+        embedding   = embedding[i],
         mutRes      = rationalMasIdx
     )
 
 
-pprint(mutants.generationDict)
+print(mutants.generationDict)
 
 
 # -------------  PYROPROLEX: pyRosetta-based protein relaxation -----------------
@@ -189,9 +191,10 @@ pprint(mutants.generationDict)
 main_pyroprolex()
 
 #TODO remove
-mutants.generationDict[1]["cb94692156241358eaac754159b5a9c67433016f"]["filePath"] = "/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/cb94692156241358eaac754159b5a9c67433016f.cif"
+mutants.generationDict[1]["63645be0658ce79541175da60b06d91c63aa26aa"]["filePath"] = "/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/63645be0658ce79541175da60b06d91c63aa26aa.cif"
 
 # -------------  GAESP: GPU-accelerated Enzyme Substrate docking pipeline -----------------
+
 
 main_gaesp(generation=generation, mutantClass_ = mutants, config=config)
 

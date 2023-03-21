@@ -14,7 +14,6 @@ def getProteinEmbedding(seq_ : dict, tokenizer = None, encoder = None, model_nam
 
     assert isinstance(seq, list)
 
-    seq_len = len(seq)
     sequence_examples = seq
 
     # this will replace all rare/ambiguous amino acids by X and introduce white-space between all amino acids
@@ -42,10 +41,12 @@ def getProteinEmbedding(seq_ : dict, tokenizer = None, encoder = None, model_nam
 
     print("shape of last hidden state embedding: ", out_.last_hidden_state.shape)
 
-    emb = out_.last_hidden_state[0,:seq_len]
-    embFin = emb.mean(dim = 0)
-
-    #get to cpu and make list to send back
-    embReturn = embFin.cpu().tolist()
+    embReturn = []
+    
+    for idx, seq in enumerate(sequence_examples):
+        seq_len = len(seq)
+        emb = out_.last_hidden_state[idx,:seq_len]
+        embFin = emb.mean(dim = 0).cpu().tolist() #need to bring to cpu for transfomration
+        embReturn.append(embFin)
     
     return embReturn
