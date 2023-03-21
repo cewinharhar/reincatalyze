@@ -86,6 +86,16 @@ def callModelForAPI(huggingfaceID : str = "Rostlab/prot_t5_xl_uniref50"):
     model = AutoModelForSeq2SeqLM.from_pretrained(huggingfaceID).to(device)
     return model
 
+def callEncoderForAPI(huggingfaceID : str = 'Rostlab/prot_t5_xl_half_uniref50-enc'):
+    if "encoder" in globals():
+        return
+    #set the device
+    device = setDevice()
+    #load the model
+    model = AutoModelForSeq2SeqLM.from_pretrained(huggingfaceID).to(device)
+    return model
+
+
 #===============================================================================
 #======================   PREDICTION FUNCTION ==================================
 #===============================================================================

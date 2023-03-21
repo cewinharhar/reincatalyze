@@ -116,8 +116,10 @@ mutants = mutantClass(
 generation = 1
 rationalMasIdx = [4,100,150]
 filePath = "/home/cewinharhar/GITHUB/gaesp/data/raw/aKGD_FE_oxo.cif"
-url = "http://0.0.0.0/deepMut"
+deepMutUrl = "http://0.0.0.0/deepMut"
+embeddingUrl = "http://0.0.0.0:9999/embedding"
 
+#-----------------------------------------
 # -------------  DeepMut -----------------
 #INIT WITH WILDTYPE
 payload = dict(
@@ -136,8 +138,9 @@ payload = dict(
 #make json
 package = prepare4APIRequest(payload)
 
+#get predictions
 try:
-    response = requests.post(url, json=package).content.decode("utf-8")
+    response = requests.post(deepMutUrl, json=package).content.decode("utf-8")
     deepMutOutput = json.loads(response)
 
 except requests.exceptions.RequestException as e:
@@ -145,7 +148,25 @@ except requests.exceptions.RequestException as e:
     print(errMes)
     pass
 
+#---------------------------------------
+#get embeddings
+#---------------------------------------
+deepMutOutput = ["MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"]
 
+payload2 = dict(inputSeq = deepMutOutput)
+
+#make json
+package2 = prepare4APIRequest(payload2)
+
+try:
+    response = requests.post(embeddingUrl, json=package2).content.decode("utf-8")
+    deepMutOutput = json.loads(response)    
+except requests.exceptions.RequestException as e:
+    errMes = "Something went wrong\n" + str(e)
+    print(errMes)
+    pass
+
+#---------------------------------------
 #add the newly generated mutants
 for mutantIterate in deepMutOutput:
     mutants.addMutant(

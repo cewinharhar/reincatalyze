@@ -2,13 +2,19 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from transformers import AutoTokenizer, AutoModel, AutoModelForSeq2SeqLM, T5Tokenizer
+from transformers import AutoTokenizer, AutoModel, T5EncoderModel, T5Tokenizer
+import re
+import numpy as np
 
 class Policy(nn.Module):
     def __init__(self, device, input_dim, hidden_dim, output_dim, model_name):
         super(Policy, self).__init__()
-        self.tokenizer = T5Tokenizer.from_pretrained(model_name)
-        self.encoder = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(device)
+        self.tokenizer = T5Tokenizer.from_pretrained(model_name, 
+                                                     do_lover_case = False, 
+                                                     mask_token = "<extra_id_0>",
+                                                     return_special_tokens_mask = True)
+        self.encoder = T5EncoderModel.from_pretrained(model_name).to(device)
+        self.encoder = self.encoder.eval()
         self.fc1 = nn.Linear(self.encoder.config.hidden_size, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, output_dim)
     
@@ -56,7 +62,7 @@ def main():
     DISCOUNT_FACTOR = 0.99
 
     # Define the agent
-    model_name = 'Rostlab/prot_t5_xl_uniref50'
+    model_name = 'Rostlab/prot_t5_xl_half_uniref50-enc'
 
     agent = ReinforcementLearningAgent(device = device,
                                        input_dim = input_dim, 
@@ -85,20 +91,17 @@ def main():
             state = new_state
         agent.update_policy(rewards, log_probs)
 
-if _name_ == '_main_':
-    main()
-
-
-aa = list("ACDEFGHIKLMNPQRSTVWY")
-aaTok = agent.policy.tokenizer(aa, max_length = 512, truncation = True, padding = True, add_special_tokens = True, return_tensors = "pt")
-
-out_ = agent.policy.encoder(input_ids = aaTok["input_ids"], attention_mask = aaTok["attention_mask"])
 
 
 
+#------------------------------------
+import matplotlib.pyplot as plt
 
+x = np.arange(len(embFin2.cpu()))
 
+plt.bar(x = x , height =  embFin2.cpu())
+plt.show()
+#------------------------------------
 
-model = AutoModelForSeq2SeqLM.from_pretrained("Rostlab/prot_t5_xl_uniref50").to(device)
 
 

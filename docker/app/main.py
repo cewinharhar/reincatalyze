@@ -6,9 +6,13 @@ import uvicorn
 import json
 
 try:
-    from app.deepMut_predictionPipe import deepMutPredictionPipe, callModelForAPI
+    from app.deepMut_predictionPipe import deepMutPredictionPipe
+    from app.getProteinEmbedding import getProteinEmbedding
+    from app.callModel4API import callModel4API
 except:
-    from deepMut_predictionPipe import deepMutPredictionPipe, callModelForAPI
+    from deepMut_predictionPipe import deepMutPredictionPipe
+    from getProteinEmbedding import getProteinEmbedding
+    from callModel4API import callModel4API
 
 #\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 """
@@ -24,9 +28,14 @@ How to use me:
 
 if "model" not in globals():
     print("Model not loaded yet: waking up benjamin!")
-    model = callModelForAPI(huggingfaceID = "app/protT5")
-    print("---------------\Benjamin is awake and loaded. \n Ready to BOOST!\n---------------")
+    model = callModel4API(huggingfaceID = "app/protT5")
+    print("---------------\n Benjamin is awake and loaded. \n Ready to BOOST!\n---------------")
 
+if "encoder" not in globals():
+    print("Encoder not loaded yet: waking up benjamin Junior!")
+    encoder = callModel4API(huggingfaceID = "app/protT5HalfEncoder", encoder = True)
+    print("---------------\n Benjamin Junior is awake and loaded. \n Ready to BOOST!\n---------------")
+     
 """ class deepMutInputStructure(BaseModel):
     predictionCallDict : str """
 
@@ -67,6 +76,23 @@ def deepMut(package = Body()):
         
         print(prediction)    
         return prediction
+
+@app.post("/embedding")
+def embedding(package = Body()):
+        """
+        example request:
+        {'predictionCallDict': 
+            {["A", "B", "G"]}
+        """
+        #load the input data excpected to be converted to list automatically
+        seq_ = json.loads(package['predictionCallDict'])
+        print(seq_)
+        print(seq_["inputSeq"])
+        print(type(seq_["inputSeq"]))
+        encoding = getProteinEmbedding(seq_ = seq_["inputSeq"], encoder = encoder)
+        print(encoding)
+        return encoding
+
 
 """ if __name__ == "__main__":
     print("Goood morning night city!")
