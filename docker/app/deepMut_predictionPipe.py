@@ -39,6 +39,7 @@ def setDevice():
     return device
 
 #create a function for the mapping
+#TODO change tokenization as in the embedding prediction
 def tokenization(df, tokenizer, tarCol = "sequence", outputColName = "labels", max_length = 512, truncation = True, padding = True, **kwargs):
     """This function takes in a dataframe or list of strings and tokenizes them using the specified tokenizer. 
     

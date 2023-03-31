@@ -114,7 +114,7 @@ mutants = mutantClass(
 
 #TODO make this iteratevly and input is json
 generation = 1
-rationalMasIdx = [4,100,150]
+rationalMaskIdx = [4,100,150]
 filePath = "/home/cewinharhar/GITHUB/gaesp/data/raw/aKGD_FE_oxo.cif"
 deepMutUrl = "http://0.0.0.0/deepMut"
 embeddingUrl = "http://0.0.0.0/embedding"
@@ -126,7 +126,7 @@ nrOfSequences = 1
 payload = dict(
                     inputSeq            = [x for x in mutants.wildTypeAASeq],
                     task                = "rational",
-                    rationalMaskIdx     = rationalMasIdx ,
+                    rationalMaskIdx     = rationalMaskIdx ,
                     huggingfaceID       = "Rostlab/prot_t5_xl_uniref50",
                     num_return_sequences= nrOfSequences,
                     max_length          = 512,

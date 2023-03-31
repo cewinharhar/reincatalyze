@@ -134,8 +134,39 @@ def embeddingRequest(seq, returnNpArray = False, embeddingUrl = "http://0.0.0.0/
         errMes = "Something went wrong\n" + str(e)
         print(errMes)
         raise Exception
+    
+
+def deepMutRequest(seq, rationalMaskIdx):
+    deepMutUrl = "http://0.0.0.0/deepMut"
+    nrOfSequences = 1
+    #INIT WITH WILDTYPE
+    payload = dict(
+                        inputSeq            = [x for x in seq],
+                        task                = "rational",
+                        rationalMaskIdx     = rationalMaskIdx ,
+                        huggingfaceID       = "Rostlab/prot_t5_xl_uniref50",
+                        num_return_sequences= nrOfSequences,
+                        max_length          = 512,
+                        do_sample           = True,
+                        temperature         = 1.5,
+                        top_k               = 20
+    )
+    #make json
+    package = prepare4APIRequest(payload)
+
+    #get predictions
+    try:
+        response = requests.post(deepMutUrl, json=package).content.decode("utf-8")
+        deepMutOutput = json.loads(response)
+        return deepMutOutput
+
+    except requests.exceptions.RequestException as e:
+        errMes = "Something went wrong\n" + str(e)
+        print(errMes)
+        pass
 
 def main(original = "MSTETLRLQKARATEEGLAF"):
+    #TODO  TRY IF RL WORKS BY CHANGING THE APPROPIATE AMINO ACIDS TOGETHER WITH DEEPMUT AND EMBEDDING
 
     input_size = 1024
     hidden_size = 256
@@ -157,12 +188,12 @@ def main(original = "MSTETLRLQKARATEEGLAF"):
         new_stateSeq = stateSeq.copy()
 
         #HERE COMES THE TRANSFORMER INPUT GAEPS
-        new_stateSeq[action] = np.random.choice(list("ACDEFGHIKLMNPQRSTVWY"))
+        new_stateSeq = list(deepMutRequest(seq = new_stateSeq, rationalMaskIdx=[action])[0])
+        #new_stateSeq[action] = np.random.choice(list("ACDEFGHIKLMNPQRSTVWY"))
 
         reward = reward_function(originalSeq_ = originalSeq, new_stateSeq_ = new_stateSeq)
 
         new_state = embeddingRequest(seq = new_stateSeq, returnNpArray=True)
-        
         
         print(
             f"""------------ \n round:{i} \n------------ \n ori Seq: {"".join(originalSeq)} \n old Seq: {"".join(stateSeq)} \n new Seq: {"".join(new_stateSeq)} \n action: {str(action)} \n prob of action: {str(prob)} \n reward: {str(reward)}"""
