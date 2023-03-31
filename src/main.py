@@ -116,8 +116,8 @@ mutants = mutantClass(
 generation = 1
 rationalMasIdx = [4,100,150]
 filePath = "/home/cewinharhar/GITHUB/gaesp/data/raw/aKGD_FE_oxo.cif"
-deepMutUrl = "http://0.0.0.0:9999/deepMut"
-embeddingUrl = "http://0.0.0.0:9999/embedding"
+deepMutUrl = "http://0.0.0.0/deepMut"
+embeddingUrl = "http://0.0.0.0/embedding"
 nrOfSequences = 1
 
 #-----------------------------------------
@@ -191,10 +191,9 @@ print(mutants.generationDict)
 main_pyroprolex()
 
 #TODO remove
-mutants.generationDict[1]["63645be0658ce79541175da60b06d91c63aa26aa"]["filePath"] = "/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/63645be0658ce79541175da60b06d91c63aa26aa.cif"
+mutants.generationDict[1]["6bfb59ed12766949900cc65d463ad60c0dbf3832"]["filePath"] = "/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/6bfb59ed12766949900cc65d463ad60c0dbf3832.cif"
 
 # -------------  GAESP: GPU-accelerated Enzyme Substrate docking pipeline -----------------
-
 
 main_gaesp(generation=generation, mutantClass_ = mutants, config=config)
 

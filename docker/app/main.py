@@ -22,6 +22,12 @@ How to use me:
     uvicorn app.main:app --host "0.0.0.0" --port "9999"
 
     Then Access api over browser 0.0.0.0:9999/ to check if successfully deployed
+
+Create docker container
+
+    sudo docker build --platform linux/amd64 -t gaesp .
+    sudo docker run -d --gpus all --name gaespTest2 -p 80:80 gaesp
+
 """
 #\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
