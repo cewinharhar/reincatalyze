@@ -1,70 +1,184 @@
-import numpy as np
 import torch
+import torch.nn as nn
+import torch.optim as optim
 import gymnasium as gym
-from matplotlib import pyplot as plt
-import display
+import numpy as np
+from torch.distributions import Categorical
+import torch.nn.functional as F
+from typing import List
 
-env = gym.make('CartPole-v1')
+import re
+import numpy as np
+import requests
+import json
+from pprint import pprint
 
-obs_size = env.observation_space.shape
-n_actions = env.action_space.n  
-HIDDEN_SIZE = 256
+import nltk
 
-model = torch.nn.Sequential(
-             torch.nn.Linear(obs_size, HIDDEN_SIZE), #4 observations, 256 hidden
-             torch.nn.ReLU(),
-             torch.nn.Linear(HIDDEN_SIZE, n_actions), #256 hidden, 2 output (left, right)
-             torch.nn.Softmax(dim=0)
-     )
 
-#define optimizer and init param
-learning_rate = 0.003 #= step size alpha
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-Horizon = 500 #how many trials
-MAX_TRAJECTORIES = 500
-gamma = 0.99
-score = []
+def prepare4APIRequest(payload : dict):
+    package = {"predictionCallDict": payload}
+    package["predictionCallDict"] = json.dumps(package["predictionCallDict"], 
+                                               default=str, # use str method to serialize non-json data
+                                               separators=(",", ":")) # remove spaces between separators
+    return package
 
-#................................................
-for trajectory in range(MAX_TRAJECTORIES):
-    curr_state = env.reset()
+"""
+In this function, we initialize the PPO agent with the specified hyperparameters, and start the training loop. 
+In each iteration, we use the agent to select an action, modify the current state by randomly changing one element of the list, 
+and calculate the corresponding reward. We then use the reward to update the agent's policy using the update method. The loop continues until the state no longer contains the "N" element.
+
+Note that in this example, the reward_function is a simple function that assigns a reward of 1 if the chosen action results in the "N" element being replaced, 
+and -1 otherwise. You can modify this function as needed to create more complex reward schemes based on the specific problem you are trying to solve.
+"""
+
+class Policy(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super(Policy, self).__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+
+class PPOAgent:
+    def __init__(self, input_size, hidden_size, output_size, lr, gamma, eps_clip):
+        self.policy = Policy(input_size, hidden_size, output_size)
+        self.optimizer = optim.Adam(self.policy.parameters(), lr=lr)
+        self.gamma = gamma
+        self.eps_clip = eps_clip
+
+    def select_action(self, state):
+        state = torch.from_numpy(state).float()
+        logits = self.policy(state)
+        probs = torch.softmax(logits, dim=0)
+        dist = Categorical(probs)
+        action = dist.sample()
+        return action.item(), probs[action.item()].item()
+
+    def update(self, states, actions, log_probs, rewards, dones):
+        states = torch.from_numpy(np.array(states)).float()
+        actions = torch.from_numpy(np.array(actions)).long()
+        log_probs = torch.from_numpy(np.array(log_probs)).float()
+        rewards = torch.from_numpy(np.array(rewards)).float()
+        dones = torch.from_numpy(np.array(dones)).float()
+
+        returns = []
+        discounted_reward = 0
+        for reward, done in zip(reversed(rewards), reversed(dones)):
+            if done:
+                discounted_reward = 0
+            discounted_reward = reward + (self.gamma * discounted_reward)
+            returns.insert(0, discounted_reward)
+
+        returns = torch.tensor(returns)
+        returns = (returns - returns.mean()) / (returns.std(unbiased=False) + 1e-8) #add small constant to avoid divition by 0
+
+        old_log_probs = log_probs.detach()
+
+        for i in range(10):
+            logits = self.policy(states)
+            probs = torch.softmax(logits, dim=1)
+            dist = Categorical(probs)
+            entropy = dist.entropy().mean()
+            new_log_probs = dist.log_prob(actions)
+
+            ratio = (new_log_probs - old_log_probs).exp()
+            surr1 = ratio * returns
+            surr2 = torch.clamp(ratio, 1 - self.eps_clip, 1 + self.eps_clip) * returns
+            loss = -torch.min(surr1, surr2) + 0.5 * F.mse_loss(returns, torch.zeros_like(returns))
+            loss = loss.mean() - 0.01 * entropy.mean()
+
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+
+
+def reward_function(originalSeq_, new_stateSeq_):
+    # Calculate reward based on state and action
+    # Here's a simple example:
+    if isinstance(originalSeq_, list):
+        originalSeq_ = "".join(originalSeq_)
+    if isinstance(new_stateSeq_, list):
+        new_stateSeq_ = "".join(new_stateSeq_)
+
+    #TODO remove
+    originalSeq_ = "MSSETTRLQNARATEECLAW"
+
+    return  -nltk.edit_distance(originalSeq_, new_stateSeq_)
+
+
+
+def embeddingRequest(seq, returnNpArray = False, embeddingUrl = "http://0.0.0.0/embedding"):
+    #check if list, if not, make oen
+    #if not isinstance(seq, list):
+    #    seq = [seq]
+    seq = ["".join(seq)]    
+
+    payload = dict(inputSeq = seq)
+
+    package = prepare4APIRequest(payload)
+
+    try:
+        response = requests.post(embeddingUrl, json=package).content.decode("utf-8")
+        embedding = json.loads(response) 
+        if returnNpArray:   
+            return np.array(embedding[0])
+        else:
+            return embedding[0]
+    
+    except requests.exceptions.RequestException as e:
+        errMes = "Something went wrong\n" + str(e)
+        print(errMes)
+        raise Exception
+
+def main(original = "MSTETLRLQKARATEEGLAF"):
+
+    input_size = 1024
+    hidden_size = 256
+    output_size = len(list(original))
+    lr = 0.001
+    gamma = 0.99
+    eps_clip = 0.2
+
     done = False
-    transitions = [] 
-    
-    for t in range(Horizon):
-        act_prob = model(torch.from_numpy(curr_state).float())
-        action = np.random.choice(np.array([0,1]), p=act_prob.data.numpy())
-        prev_state = curr_state
-        curr_state, _, done, info = env.step(action)
-        transitions.append((prev_state[0], action, t+1)) 
-        if done: 
-            break
-    score.append(len(transitions))
 
-    reward_batch = torch.Tensor([r for (s,a,r) in transitions]).flip(dims=(0,))     
-  
-    batch_Gvals =[]
-    for i in range(len(transitions)):
-        new_Gval=0
-        power=0
-        for j in range(i,len(transitions)):
-             new_Gval=new_Gval+((gamma**power)*reward_batch[j]).numpy()
-             power+=1
-        batch_Gvals.append(new_Gval)
-    expected_returns_batch=torch.FloatTensor(batch_Gvals)
-    expected_returns_batch /= expected_returns_batch.max()    
-    state_batch = torch.Tensor([s for (s,a,r) in transitions]) 
-    action_batch = torch.Tensor([a for (s,a,r) in transitions])     
-    pred_batch = model(state_batch) 
-    prob_batch = pred_batch.gather(dim=1,index=action_batch.long().view(-1,1)).squeeze() 
-    
-    loss= -torch.sum(torch.log(prob_batch)*expected_returns_batch) 
-    
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
+    agent = PPOAgent(input_size, hidden_size, output_size, lr, gamma, eps_clip)
+    originalSeq = stateSeq = list(original)
+    state = embeddingRequest(seq = stateSeq, returnNpArray = True)
 
-    if trajectory % 50 == 0 and trajectory>0:
-        print('Trajectory {}\tAverage Score: {:.2f}'
-                .format(trajectory, np.mean(score[-50:-1])))
-#................................................
+    i = 0
+    while not done:
+        i += 1
+        action, prob = agent.select_action(state)
+        new_stateSeq = stateSeq.copy()
+
+        #HERE COMES THE TRANSFORMER INPUT GAEPS
+        new_stateSeq[action] = np.random.choice(list("ACDEFGHIKLMNPQRSTVWY"))
+
+        reward = reward_function(originalSeq_ = originalSeq, new_stateSeq_ = new_stateSeq)
+
+        new_state = embeddingRequest(seq = new_stateSeq, returnNpArray=True)
+        
+        
+        print(
+            f"""------------ \n round:{i} \n------------ \n ori Seq: {"".join(originalSeq)} \n old Seq: {"".join(stateSeq)} \n new Seq: {"".join(new_stateSeq)} \n action: {str(action)} \n prob of action: {str(prob)} \n reward: {str(reward)}"""
+        )
+
+        state = new_state
+        stateSeq = new_stateSeq
+
+        agent.update([state], [action], [prob], [reward], [done])
+
+
+        if i == 200:
+            done = True
+
+    print("Final state:", state)
+
+main()
+
+pprint("hi")
