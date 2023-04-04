@@ -33,8 +33,10 @@ and -1 otherwise. You can modify this function as needed to create more complex 
 """
 
 class Policy(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(self, input_size, hidden_size, output_size, seed = 13):
         super(Policy, self).__init__()
+        #set seed
+        torch.manual_seed(seed)
         self.fc1 = nn.Linear(input_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, output_size)
 
@@ -74,6 +76,7 @@ class PPOAgent:
             discounted_reward = reward + (self.gamma * discounted_reward)
             returns.insert(0, discounted_reward)
 
+        #normalize 
         returns = torch.tensor(returns)
         returns = (returns - returns.mean()) / (returns.std(unbiased=False) + 1e-8) #add small constant to avoid divition by 0
 
