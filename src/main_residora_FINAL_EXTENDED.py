@@ -12,7 +12,10 @@ import numpy as np
 import requests
 import json
 from pprint import pprint
+import os
+from datetime import datetime
 
+import pandas as pd
 import nltk
 
 from src.mainHelpers.prepare4APIRequest import prepare4APIRequest
@@ -34,18 +37,20 @@ Note that in this example, the reward_function is a simple function that assigns
 and -1 otherwise. You can modify this function as needed to create more complex reward schemes based on the specific problem you are trying to solve.
 """
 
+#TODO remove PPO folders if necessary
+
 class ActorCritic(nn.Module):
     """ Class which inits the actor & critic, evaluates and acts for a discrete action space
 
         activationFunction = [Tanh, ReLu]
     """
 
-    def __init__(self, state_dim, action_dim, activationFunction = "tanh", seed = 13, nrNeuronsInHiddenLayers = [512, 256], dropOutProb = 0.2):
+    def __init__(self, state_dim : int, action_dim : int, activationFunction : str = "tanh", seed : int = 13, nrNeuronsInHiddenLayers : List = [512, 256], dropOutProb : float = 0.2):
         super(ActorCritic, self).__init__()
 
-        self.state_dim
-        self.action_dim
-        self.seed
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+        self.seed = seed
 
         #set seed
         torch.manual_seed(self.seed)
@@ -64,7 +69,7 @@ class ActorCritic(nn.Module):
             nn.Linear(nrNeuronsInHiddenLayers[0], nrNeuronsInHiddenLayers[1]),
             self.activationFunction(),
             nn.Dropout(dropOutProb),
-            nn.Linear(nrNeuronsInHiddenLayers[0], action_dim),
+            nn.Linear(nrNeuronsInHiddenLayers[1], action_dim),
             nn.Softmax(dim = -1)
         )
         #the critic has only 1 output node which is the estimation of how well the actor has decided
@@ -75,7 +80,7 @@ class ActorCritic(nn.Module):
             nn.Linear(nrNeuronsInHiddenLayers[0], nrNeuronsInHiddenLayers[1]),
             self.activationFunction(),
             nn.Dropout(dropOutProb),
-            nn.Linear(nrNeuronsInHiddenLayers[0], 1)
+            nn.Linear(nrNeuronsInHiddenLayers[1], 1)
         )
 
     def select_action_exploration(self, embedding):  #also called select_action
@@ -127,7 +132,7 @@ class ActorCritic(nn.Module):
 class PPO:
     """
     This class selects the mutations and updates the policy of actor and critic"""
-    def __init__(self, state_dim, action_dim, lr_actor = 0.0003, lr_critic = 0.001, gamma = 0.99, K_epochs = 40, eps_clip = 0.2, device = None):
+    def __init__(self, state_dim, action_dim, lr_actor = 0.0003, lr_critic = 0.001, gamma = 0.99, K_epochs = 40, eps_clip = 0.2, device = None, nrNeuronsInHiddenLayers : List = [512, 256], dropOutProb : float = 0.2):
 
         if not device:
             if(torch.cuda.is_available()): 
@@ -136,6 +141,8 @@ class PPO:
                 print("Device set to : " + str(torch.cuda.get_device_name(self.device)))
             else:
                 print("Device set to : cpu")  
+        else:
+            self.device = device
 
         #storage for values in Buffer
         self.actions = []
@@ -143,7 +150,7 @@ class PPO:
         self.logProbs = []
         self.rewards = []
         self.stateValues = []
-        self.isTerminal = []
+        self.isTerminals = []
         
         #hyperparameters 
         self.gamma = gamma
@@ -151,7 +158,7 @@ class PPO:
         self.K_epochs = K_epochs
 
         #init actor & critic
-        self.policy = ActorCritic(state_dim=state_dim, action_dim=action_dim).to(self.device)
+        self.policy = ActorCritic(state_dim=state_dim, action_dim=action_dim, nrNeuronsInHiddenLayers=nrNeuronsInHiddenLayers, dropOutProb = dropOutProb).to(self.device)
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy.actor.parameters(), 'lr': lr_actor},
                         {'params': self.policy.critic.parameters(), 'lr': lr_critic}
@@ -162,7 +169,7 @@ class PPO:
         # which is used to calculate the policy loss during the training process. 
         # This copy is referred to as the "old policy", or the "previous policy".
         #Reinitialize the actor and critic
-        self.policy_old = ActorCritic(state_dim=state_dim, action_dim=action_dim).to(self.device)
+        self.policy_old = ActorCritic(state_dim=state_dim, action_dim=action_dim, nrNeuronsInHiddenLayers=nrNeuronsInHiddenLayers).to(self.device)
         #copy parameters from the first actor & critic network
         self.policy_old.load_state_dict(self.policy.state_dict())        
 
@@ -174,7 +181,7 @@ class PPO:
         del self.logProbs[:]
         del self.rewards[:]
         del self.stateValues[:]
-        del self.isTerminal[:]        
+        del self.isTerminals[:]        
 
     def select_action_exploitation(self, embedding):
         """
@@ -187,7 +194,7 @@ class PPO:
         """
 
         with torch.no_grad():
-            state = torch.FloatTensor(state).to(self.device)
+            embedding = torch.FloatTensor(embedding).to(self.device)
             action, actionLogProb, StateVal = self.policy_old.select_action_exploration(embedding)
 
         #save the values in the buffer
@@ -219,7 +226,7 @@ class PPO:
         
         #reversed; the discounted reward calculation involves looking ahead to future rewards, 
         # so starting from the end of the list allows for the cumulative sum of discounted rewards to be computed in a singlepass.
-        for reward, isTerminal in zip(reversed(self.rewards), reversed(self.isTerminal)):     
+        for reward, isTerminal in zip(reversed(self.rewards), reversed(self.isTerminals)):     
             if isTerminal:
                 discounted_reward = 0
             discounted_reward = reward + (self.gamma * discounted_reward)
@@ -243,7 +250,7 @@ class PPO:
         #-----------------------------------------------------------------------------------------------
         # Optimize the policy network for K epochs
         for kEpoch in range(self.K_epochs):
-         
+            #print(kEpoch)
             # Evaluating old actions and values
             logProbs, stateValues, distEntropy = self.policy.evaluate(old_states, old_actions)
 
@@ -278,8 +285,196 @@ class PPO:
         self.policy_old.load_state_dict(torch.load(checkpoint_path, map_location=lambda storage, loc: storage))
         self.policy.load_state_dict(torch.load(checkpoint_path, map_location=lambda storage, loc: storage))
 
+#---------------------------------------------------------------------------------
+
+#setup env
+
+####### initialize environment hyperparameters ######
+
+env_name = "CartPole-v1"
+env_name = "Acrobot-v1"
+has_continuous_action_space = False
+
+max_ep_len = 400                    # max timesteps in one episode
+max_training_timesteps = int(1e5)   # break training loop if timeteps > max_training_timesteps
+
+print_freq = max_ep_len * 4     # print avg reward in the interval (in num timesteps)
+log_freq = max_ep_len * 2       # log avg reward in the interval (in num timesteps)
+save_model_freq = int(2e4)      # save model frequency (in num timesteps)
+
+action_std = None
+update_timestep = max_ep_len * 4      # update policy every n timesteps
+K_epochs = 40               # update policy for K epochs
+eps_clip = 0.2              # clip parameter for PPO
+gamma = 0.99                # discount factor
+
+lr_actor = 0.0003       # learning rate for actor network
+lr_critic = 0.001       # learning rate for critic network
+
+random_seed = 0         # set random seed if required (0 = no random seed)
+env = gym.make(env_name)
+
+# state space dimension
+state_dim = env.observation_space.shape[0]
+action_dim = env.action_space.n
+
+log_dir = "PPO_logs"
+if not os.path.exists(log_dir):
+      os.makedirs(log_dir)
+
+log_dir = log_dir + '/' + env_name + '/'
+if not os.path.exists(log_dir):
+      os.makedirs(log_dir)
+
+################### checkpointing ###################
+
+run_num_pretrained = 0      #### change this to prevent overwriting weights in same env_name folder
+
+directory = "models/residora/"
+checkpoint_path = directory + "PPO_{}_{}_{}.pth".format(env_name, random_seed, run_num_pretrained)
+print("save checkpoint path : " + checkpoint_path)
+
+################### Let go ###################
+torch.cuda.empty_cache()
+
+ppo_agent = PPO(state_dim = state_dim, 
+                action_dim = action_dim, 
+                lr_actor = lr_actor, 
+                lr_critic = lr_critic, 
+                gamma = gamma, 
+                K_epochs = K_epochs, 
+                eps_clip = eps_clip,
+                device = "cpu",
+                nrNeuronsInHiddenLayers = [32, 32],
+                dropOutProb = 0)
+
+#----------------
+start_time = datetime.now().replace(microsecond=0)
+print_running_reward = 0
+print_running_episodes = 0
+log_running_reward = 0
+log_running_episodes = 0
+time_step = 0
+i_episode = 0
+
+#logfile
+log_f = open("/home/cewinharhar/GITHUB/reincatalyze/PPO_logs/CartPole-v1/test.csv","w+")
+log_f.write('episode,timestep,reward\n')
+
+while time_step <= max_training_timesteps:
+    
+    state = env.reset()[0]
+    current_ep_reward = 0
+
+    for t in range(1, max_ep_len+1):
+        
+        # select action with policy
+        action = ppo_agent.select_action_exploitation(state)
+        state, reward, done, _, dic_ = env.step(action)
+        #print(state, reward, done, _, dic_)
+        # saving reward and is_terminals
+        ppo_agent.rewards.append(reward)
+        ppo_agent.isTerminals.append(done)
+        
+        time_step +=1
+        current_ep_reward += reward
+
+        # update PPO agent
+        if time_step % update_timestep == 0:
+            ppo_agent.update()
+
+        # log in logging file
+        if time_step % log_freq == 0:
+
+            # log average reward till last episode
+            log_avg_reward = log_running_reward / log_running_episodes
+            log_avg_reward = round(log_avg_reward, 4)
+
+            log_f.write('{},{},{}\n'.format(i_episode, time_step, log_avg_reward))
+            log_f.flush()
+
+            log_running_reward = 0
+            log_running_episodes = 0
+
+        # printing average reward
+        if time_step % print_freq == 0:
+
+            # print average reward till last episode
+            print_avg_reward = print_running_reward / print_running_episodes
+            print_avg_reward = round(print_avg_reward, 2)
+
+            print("Episode : {} \t\t Timestep : {} \t\t Average Reward : {}".format(i_episode, time_step, print_avg_reward))
+
+            print_running_reward = 0
+            print_running_episodes = 0
+
+            
+        # save model weights
+        if time_step % save_model_freq == 0:
+            print("--------------------------------------------------------------------------------------------")
+            print("saving model at : " + checkpoint_path)
+            ppo_agent.save(checkpoint_path)
+            print("model saved")
+            print("Elapsed Time  : ", datetime.now().replace(microsecond=0) - start_time)
+            print("--------------------------------------------------------------------------------------------")
+            
+        # break; if the episode is over
+        if done:
+            break
+
+    print_running_reward += current_ep_reward
+    print_running_episodes += 1
+    
+    log_running_reward += current_ep_reward
+    log_running_episodes += 1
+
+    i_episode += 1
+
+log_f.close()
+
+#------ Ploting ----------
+
+plotTraining()
+
+def plotTraining(path = "/home/cewinharhar/GITHUB/reincatalyze/PPO_logs/CartPole-v1/test.csv"):
+    data = pd.read_csv(path)
+    # smooth out rewards to get a smooth and a less smooth (var) plot lines
+    fig_width = 10
+    fig_height = 6
 
 
+    # smooth out rewards to get a smooth and a less smooth (var) plot lines
+    window_len_smooth = 10
+    min_window_len_smooth = 1
+    linewidth_smooth = 1.5
+    alpha_smooth = 1
+
+    window_len_var = 5
+    min_window_len_var = 1
+    linewidth_var = 2
+    alpha_var = 0.1
+    ax = plt.gca()
+    data_avg = data.copy()
+
+    data_avg['reward_smooth'] = data['reward'].rolling(window=window_len_smooth, win_type='triang', min_periods=min_window_len_smooth).mean()
+    data_avg['reward_var'] = data['reward'].rolling(window=window_len_var, win_type='triang', min_periods=min_window_len_var).mean()
+
+    data_avg.plot(kind='line', x='timestep' , y='reward_smooth',ax=ax,color="red",  linewidth=linewidth_smooth, alpha=alpha_smooth)
+    data_avg.plot(kind='line', x='timestep' , y='reward_var',ax=ax,color="blue",  linewidth=linewidth_var, alpha=alpha_var)
+
+    # keep only reward_smooth in the legend and rename it
+    handles, labels = ax.get_legend_handles_labels()
+
+    plt.show()
+
+""" env.close() """
+
+
+""" aKGD31 = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
+
+input_size = 1024
+hidden_size = [512, 256]
+output_size = len(list(aKGD31)) """
 ######################################################################################################################################################
 ######################################################################################################################################################
 ######################################################################################################################################################
