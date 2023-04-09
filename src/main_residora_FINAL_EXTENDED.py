@@ -14,6 +14,9 @@ import json
 from pprint import pprint
 import os
 from datetime import datetime
+from copy import deepcopy
+
+from typing import List
 
 import pandas as pd
 import nltk
@@ -39,13 +42,31 @@ and -1 otherwise. You can modify this function as needed to create more complex 
 
 #TODO remove PPO folders if necessary
 
+class convNet(nn.Module):
+    def __init__(self, activationFunction, out_channel, kernel_size : int, padding : int, stride : int, dropOutProb : float):
+        super(convNet, self).__init__()
+    
+        self.cnn = torch.nn.Sequential(
+                            torch.nn.Conv1d(in_channels = 1, out_channels = out_channel, kernel_size=kernel_size, padding=padding, stride = stride ), # 7x32
+                            activationFunction(),
+                            torch.nn.Dropout( dropOutProb ),
+                            nn.Flatten()
+        )
+
+    def forward(self, x1D):
+        x = x1D.unsqueeze(0).unsqueeze(0)
+        out = self.cnn(x)
+        return out
+
+
+
 class ActorCritic(nn.Module):
     """ Class which inits the actor & critic, evaluates and acts for a discrete action space
 
         activationFunction = [Tanh, ReLu]
     """
 
-    def __init__(self, state_dim : int, action_dim : int, activationFunction : str = "tanh", seed : int = 13, nrNeuronsInHiddenLayers : List = [512, 256], dropOutProb : float = 0.2):
+    def __init__(self, state_dim : int, action_dim : int, activationFunction : str = "tanh", seed : int = 13, useCNN = False, stride = 4, out_channel = 4, nrNeuronsInHiddenLayers : List = [256, 256], dropOutProb : float = 0.05):
         super(ActorCritic, self).__init__()
 
         self.state_dim = state_dim
@@ -58,30 +79,57 @@ class ActorCritic(nn.Module):
         #set activation function 
         if activationFunction.lower() == "relu":
             self.activationFunction = nn.ReLU
+        elif activationFunction.lower() == "leakyrelu":
+            self.activationFunction = nn.LeakyReLU
         elif activationFunction.lower() == "tanh":
             self.activationFunction = nn.Tanh
 
-        #create actor and critic
-        self.actor = nn.Sequential(
-            nn.Linear(state_dim, nrNeuronsInHiddenLayers[0]),
-            self.activationFunction(),
-            nn.Dropout(dropOutProb),
-            nn.Linear(nrNeuronsInHiddenLayers[0], nrNeuronsInHiddenLayers[1]),
-            self.activationFunction(),
-            nn.Dropout(dropOutProb),
-            nn.Linear(nrNeuronsInHiddenLayers[1], action_dim),
-            nn.Softmax(dim = -1)
-        )
-        #the critic has only 1 output node which is the estimation of how well the actor has decided
-        self.critic = nn.Sequential(
-            nn.Linear(state_dim, nrNeuronsInHiddenLayers[0]),
-            self.activationFunction(),
-            nn.Dropout(dropOutProb),
-            nn.Linear(nrNeuronsInHiddenLayers[0], nrNeuronsInHiddenLayers[1]),
-            self.activationFunction(),
-            nn.Dropout(dropOutProb),
-            nn.Linear(nrNeuronsInHiddenLayers[1], 1)
-        )
+        if useCNN:
+            cnn = convNet(activationFunction = self.activationFunction, out_channel = out_channel, kernel_size=8, padding = 1, stride = stride, dropOutProb=dropOutProb)
+            
+            self.actor = deepcopy(cnn)
+            self.critic = deepcopy(cnn)
+
+            linearInputDim = int(state_dim/stride*out_channel)
+            
+            self.actor.cnn.append(
+                nn.Sequential(
+                    nn.Linear(linearInputDim , nrNeuronsInHiddenLayers[1]),
+                    self.activationFunction(),
+                    nn.Linear(nrNeuronsInHiddenLayers[1], action_dim),
+                    nn.Softmax(dim = -1)               
+                )
+            )
+            self.critic.cnn.append(
+                nn.Sequential(
+                    nn.Linear(linearInputDim , nrNeuronsInHiddenLayers[1]),
+                    self.activationFunction(),
+                    nn.Linear(nrNeuronsInHiddenLayers[1], 1)           
+                )
+            )
+
+        else:      
+            #create actor and critic
+            self.actor = nn.Sequential(
+                nn.Linear(state_dim, nrNeuronsInHiddenLayers[0]),
+                self.activationFunction(inplace = True), #saves memory
+                nn.Dropout(dropOutProb),
+                nn.Linear(nrNeuronsInHiddenLayers[0], nrNeuronsInHiddenLayers[1]),
+                self.activationFunction(inplace = True), #saves memory
+                nn.Dropout(dropOutProb),
+                nn.Linear(nrNeuronsInHiddenLayers[1], action_dim),
+                nn.Softmax(dim = -1)
+            )
+            #the critic has only 1 output node which is the estimation of how well the actor has decided
+            self.critic = nn.Sequential(
+                nn.Linear(state_dim, nrNeuronsInHiddenLayers[0]),
+                self.activationFunction(inplace = True), #saves memory
+                nn.Dropout(dropOutProb),
+                nn.Linear(nrNeuronsInHiddenLayers[0], nrNeuronsInHiddenLayers[1]),
+                self.activationFunction(inplace = True), #saves memory
+                nn.Dropout(dropOutProb),
+                nn.Linear(nrNeuronsInHiddenLayers[1], 1)
+            )
 
     def select_action_exploration(self, embedding):  #also called select_action
         """ This function takes in the embedding and makes a decision on which residue to mutate
@@ -675,3 +723,25 @@ aKGD31 = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYR
 main( original = aKGD31)
 
 pprint("hi")
+
+
+
+#--------------------------------
+# Define the input data as a 1D tensor of length 10
+data = torch.randn(1024)
+
+cnn = convNet(activationFunction=nn.ReLU, kernel_size=8, padding=1, stride=2, dropOutProb=0.05)
+
+cnn2 = deepcopy(cnn)
+
+cnn2.cnn.append(
+                    nn.Sequential(
+                    nn.Linear(int(state_dim/2), 256),
+                    nn.ReLU(),
+                    nn.Linear(256, 300),
+                    nn.Softmax(dim = -1)               
+                )
+)
+
+oh = ActorCritic(state_dim=1024, action_dim=300, useCNN=True)
+
