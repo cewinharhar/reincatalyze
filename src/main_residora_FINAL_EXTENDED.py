@@ -20,6 +20,7 @@ from typing import List
 
 import pandas as pd
 import nltk
+import matplotlib.pyplot as plt
 
 from src.mainHelpers.prepare4APIRequest import prepare4APIRequest
 
@@ -53,11 +54,12 @@ class convNet(nn.Module):
                             nn.Flatten()
         )
 
-    def forward(self, x1D):
-        x = x1D.unsqueeze(0).unsqueeze(0)
-        out = self.cnn(x)
-        return out
+        #get the dimen
 
+    def forward(self, x1D):
+        #x3D = x1D.unsqueeze(0).unsqueeze(0)
+        return self.cnn(x1D)
+    
 
 
 class ActorCritic(nn.Module):
@@ -65,13 +67,18 @@ class ActorCritic(nn.Module):
 
         activationFunction = [Tanh, ReLu]
     """
-
-    def __init__(self, state_dim : int, action_dim : int, activationFunction : str = "tanh", seed : int = 13, useCNN = False, stride = 4, out_channel = 4, nrNeuronsInHiddenLayers : List = [256, 256], dropOutProb : float = 0.05):
+    def __init__(self, state_dim : int, action_dim : int, lr_actor : float = 0.0003, lr_critic : float = 0.001, 
+                 nrNeuronsInHiddenLayers : List = [64, 64],  activationFunction : str = "tanh", seed : int = 13, 
+                 useCNN = False, stride = 4, kernel_size = 8, out_channel = 4, dropOutProb : float = 0.05):
         super(ActorCritic, self).__init__()
 
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.seed = seed
+        self.useCNN = useCNN
+
+        self.lr_actor = lr_actor
+        self.lr_critic = lr_critic
 
         #set seed
         torch.manual_seed(self.seed)
@@ -85,10 +92,10 @@ class ActorCritic(nn.Module):
             self.activationFunction = nn.Tanh
 
         if useCNN:
-            cnn = convNet(activationFunction = self.activationFunction, out_channel = out_channel, kernel_size=8, padding = 1, stride = stride, dropOutProb=dropOutProb)
+            self.cnn = convNet(activationFunction = self.activationFunction, out_channel = out_channel, kernel_size=kernel_size, padding = 1, stride = stride, dropOutProb=dropOutProb)
             
-            self.actor = deepcopy(cnn)
-            self.critic = deepcopy(cnn)
+            self.actor = deepcopy(self.cnn)
+            self.critic = deepcopy(self.cnn)
 
             linearInputDim = int(state_dim/stride*out_channel)
             
@@ -112,10 +119,10 @@ class ActorCritic(nn.Module):
             #create actor and critic
             self.actor = nn.Sequential(
                 nn.Linear(state_dim, nrNeuronsInHiddenLayers[0]),
-                self.activationFunction(inplace = True), #saves memory
+                self.activationFunction(), #saves memory
                 nn.Dropout(dropOutProb),
                 nn.Linear(nrNeuronsInHiddenLayers[0], nrNeuronsInHiddenLayers[1]),
-                self.activationFunction(inplace = True), #saves memory
+                self.activationFunction(), #saves memory
                 nn.Dropout(dropOutProb),
                 nn.Linear(nrNeuronsInHiddenLayers[1], action_dim),
                 nn.Softmax(dim = -1)
@@ -123,15 +130,15 @@ class ActorCritic(nn.Module):
             #the critic has only 1 output node which is the estimation of how well the actor has decided
             self.critic = nn.Sequential(
                 nn.Linear(state_dim, nrNeuronsInHiddenLayers[0]),
-                self.activationFunction(inplace = True), #saves memory
+                self.activationFunction(), #saves memory
                 nn.Dropout(dropOutProb),
                 nn.Linear(nrNeuronsInHiddenLayers[0], nrNeuronsInHiddenLayers[1]),
-                self.activationFunction(inplace = True), #saves memory
+                self.activationFunction(), #saves memory
                 nn.Dropout(dropOutProb),
                 nn.Linear(nrNeuronsInHiddenLayers[1], 1)
             )
 
-    def select_action_exploration(self, embedding):  #also called select_action
+    def select_action_exploration(self, embedding_):  #also called select_action
         """ This function takes in the embedding and makes a decision on which residue to mutate
             The act function is used during training to select actions based on the current state of the environment, as well as the policy learned so far. 
             It takes as input a state tensor and returns three tensors:
@@ -144,6 +151,11 @@ class ActorCritic(nn.Module):
             This function calculates the action probabilities or the mean and variance of the action distribution, 
             depending on the type of action space, and then samples a new action from the distribution.
         """
+        if self.useCNN:
+            embedding = embedding_.unsqueeze(0).unsqueeze(0)
+        else:
+            embedding = embedding_
+
         #The probs of the actor the decide which one to mutate
         mutationProbabilities = self.actor(embedding)
         #transform probs into probability distirbution
@@ -156,7 +168,7 @@ class ActorCritic(nn.Module):
 
         return action.detach(), actionLogProb.detach(), stateVal.detach()
     
-    def evaluate(self, embedding, action):  #also called select_action
+    def evaluate(self, embedding_, action):  #also called select_action
         """ 
             The evaluate function, on the other hand, is used to compute the log-probability of a given action under the current policy, 
             as well as other quantities that are used in the computation of the PPO loss function. 
@@ -165,8 +177,14 @@ class ActorCritic(nn.Module):
                 - dist_entropy: A tensor containing the entropy of the action distribution. This term is included in the PPO loss function to encourage exploration, by penalizing policies that are too deterministic.
                 - state_values: A tensor containing the estimated state value of the current state under the critic network. This tensor is used in the computation of the PPO loss function.
         """
+        if self.useCNN:
+            #permutation to tell CNN that we have batch size of 3 but still only 1 channel
+            embedding   = embedding_.unsqueeze(0).permute([1,0,2])
+        else:
+            embedding   = embedding_
+
         #The probs of the actor the decide which one to mutate
-        mutationProbabilities = self.actor(embedding)
+        mutationProbabilities = self.actor(embedding) 
         #transform probs into probability distirbution
         dist = Categorical(mutationProbabilities)
 
@@ -180,7 +198,7 @@ class ActorCritic(nn.Module):
 class PPO:
     """
     This class selects the mutations and updates the policy of actor and critic"""
-    def __init__(self, state_dim, action_dim, lr_actor = 0.0003, lr_critic = 0.001, gamma = 0.99, K_epochs = 40, eps_clip = 0.2, device = None, nrNeuronsInHiddenLayers : List = [512, 256], dropOutProb : float = 0.2):
+    def __init__(self, ActorCritic, gamma = 0.99, K_epochs = 40, eps_clip = 0.2, device = None):
 
         if not device:
             if(torch.cuda.is_available()): 
@@ -206,10 +224,10 @@ class PPO:
         self.K_epochs = K_epochs
 
         #init actor & critic
-        self.policy = ActorCritic(state_dim=state_dim, action_dim=action_dim, nrNeuronsInHiddenLayers=nrNeuronsInHiddenLayers, dropOutProb = dropOutProb).to(self.device)
+        self.policy = ActorCritic.to(self.device)
         self.optimizer = torch.optim.Adam([
-                        {'params': self.policy.actor.parameters(), 'lr': lr_actor},
-                        {'params': self.policy.critic.parameters(), 'lr': lr_critic}
+                        {'params': self.policy.actor.parameters(), 'lr': self.policy.lr_actor},
+                        {'params': self.policy.critic.parameters(), 'lr': self.policy.lr_critic}
                     ])
         
         #reinitialize actor and critic to use as comparison
@@ -217,7 +235,7 @@ class PPO:
         # which is used to calculate the policy loss during the training process. 
         # This copy is referred to as the "old policy", or the "previous policy".
         #Reinitialize the actor and critic
-        self.policy_old = ActorCritic(state_dim=state_dim, action_dim=action_dim, nrNeuronsInHiddenLayers=nrNeuronsInHiddenLayers).to(self.device)
+        self.policy_old = deepcopy(self.policy)
         #copy parameters from the first actor & critic network
         self.policy_old.load_state_dict(self.policy.state_dict())        
 
@@ -300,9 +318,13 @@ class PPO:
         for kEpoch in range(self.K_epochs):
             #print(kEpoch)
             # Evaluating old actions and values
+            #print("Update > evaluate")
+            #print(old_states)
+            #print(old_states.shape)
             logProbs, stateValues, distEntropy = self.policy.evaluate(old_states, old_actions)
 
             # match state_values tensor dimensions with rewards tensor
+            #print("Update > sequeeze")
             stateValues = torch.squeeze(stateValues)
             
             # Finding the ratio (pi_theta / pi_theta__old)
@@ -316,6 +338,7 @@ class PPO:
             loss = -torch.min(surr1, surr2) + 0.5 * self.MseLoss(stateValues, rewards) - 0.01 * distEntropy
             
             # take gradient step
+            #print("Update > grad Step")
             self.optimizer.zero_grad()
             loss.mean().backward()
             self.optimizer.step()
@@ -384,105 +407,137 @@ print("save checkpoint path : " + checkpoint_path)
 
 ################### Let go ###################
 torch.cuda.empty_cache()
+ppo_agent = None
 
-ppo_agent = PPO(state_dim = state_dim, 
-                action_dim = action_dim, 
-                lr_actor = lr_actor, 
-                lr_critic = lr_critic, 
-                gamma = gamma, 
-                K_epochs = K_epochs, 
-                eps_clip = eps_clip,
-                device = "cpu",
-                nrNeuronsInHiddenLayers = [32, 32],
-                dropOutProb = 0)
+actorCritic = ActorCritic(
+    state_dim=state_dim,
+    action_dim=action_dim,
+    lr_actor=lr_actor,
+    lr_critic=lr_critic,
+    nrNeuronsInHiddenLayers=[64,64],
+    activationFunction="tanh",
+    seed = 13,
+    useCNN = True,
+    stride = 1,
+    kernel_size=3,
+    out_channel=4,
+    dropOutProb=0.01
+)
+
+""" actorCritic = ActorCritic(
+    state_dim=state_dim,
+    action_dim=action_dim,
+    lr_actor=lr_actor,
+    lr_critic=lr_critic,
+    nrNeuronsInHiddenLayers=[64,64],
+    activationFunction="tanh",
+    seed = 13,
+    useCNN = False,
+    dropOutProb=0.01
+) """
+
+ppo_agent = PPO(
+    ActorCritic=actorCritic,
+    gamma=gamma,
+    K_epochs=K_epochs,
+    eps_clip=eps_clip,
+    device="cpu"
+)
+
 
 #----------------
-start_time = datetime.now().replace(microsecond=0)
-print_running_reward = 0
-print_running_episodes = 0
-log_running_reward = 0
-log_running_episodes = 0
-time_step = 0
-i_episode = 0
+def run():
+    start_time = datetime.now().replace(microsecond=0)
+    print_running_reward = 0
+    print_running_episodes = 0
+    log_running_reward = 0
+    log_running_episodes = 0
+    time_step = 0
+    i_episode = 0
 
-#logfile
-log_f = open("/home/cewinharhar/GITHUB/reincatalyze/PPO_logs/CartPole-v1/test.csv","w+")
-log_f.write('episode,timestep,reward\n')
+    #logfile
+    log_f = open(log_dir + "/test.csv","w+")
+    log_f.write('episode,timestep,reward\n')
 
-while time_step <= max_training_timesteps:
-    
-    state = env.reset()[0]
-    current_ep_reward = 0
-
-    for t in range(1, max_ep_len+1):
+    while time_step <= max_training_timesteps:
         
-        # select action with policy
-        action = ppo_agent.select_action_exploitation(state)
-        state, reward, done, _, dic_ = env.step(action)
-        #print(state, reward, done, _, dic_)
-        # saving reward and is_terminals
-        ppo_agent.rewards.append(reward)
-        ppo_agent.isTerminals.append(done)
+        state, _ = env.reset()
+        current_ep_reward = 0
+
+        for t in range(1, max_ep_len+1):
+            
+            # select action with policy
+            action = ppo_agent.select_action_exploitation(state)
+            state, reward, done, _, dic_ = env.step(action)
+            #print(state, reward, done, _, dic_)
+            # saving reward and is_terminals
+            ppo_agent.rewards.append(reward)
+            ppo_agent.isTerminals.append(done)
+            
+            time_step +=1
+            current_ep_reward += reward
+
+            # update PPO agent
+            if time_step % update_timestep == 0:
+                ppo_agent.update()
+
+            # log in logging file
+            if time_step % log_freq == 0:
+
+                # log average reward till last episode
+                log_avg_reward = log_running_reward / log_running_episodes
+                log_avg_reward = round(log_avg_reward, 4)
+
+                log_f.write('{},{},{}\n'.format(i_episode, time_step, log_avg_reward))
+                log_f.flush()
+
+                log_running_reward = 0
+                log_running_episodes = 0
+
+            # printing average reward
+            if time_step % print_freq == 0:
+
+                # print average reward till last episode
+                print_avg_reward = print_running_reward / print_running_episodes
+                print_avg_reward = round(print_avg_reward, 2)
+
+                print("Episode : {} \t\t Timestep : {} \t\t Average Reward : {}".format(i_episode, time_step, print_avg_reward))
+
+                print_running_reward = 0
+                print_running_episodes = 0
+
+                
+            # save model weights
+            if time_step % save_model_freq == 0:
+                print("--------------------------------------------------------------------------------------------")
+                print("saving model at : " + checkpoint_path)
+                ppo_agent.save(checkpoint_path)
+                print("model saved")
+                print("Elapsed Time  : ", datetime.now().replace(microsecond=0) - start_time)
+                print("--------------------------------------------------------------------------------------------")
+                
+            # break; if the episode is over
+            if done:
+                break
+
+        print_running_reward += current_ep_reward
+        print_running_episodes += 1
         
-        time_step +=1
-        current_ep_reward += reward
+        log_running_reward += current_ep_reward
+        log_running_episodes += 1
 
-        # update PPO agent
-        if time_step % update_timestep == 0:
-            ppo_agent.update()
+        i_episode += 1
 
-        # log in logging file
-        if time_step % log_freq == 0:
+    log_f.close()
+#####################################################
 
-            # log average reward till last episode
-            log_avg_reward = log_running_reward / log_running_episodes
-            log_avg_reward = round(log_avg_reward, 4)
+run()
 
-            log_f.write('{},{},{}\n'.format(i_episode, time_step, log_avg_reward))
-            log_f.flush()
-
-            log_running_reward = 0
-            log_running_episodes = 0
-
-        # printing average reward
-        if time_step % print_freq == 0:
-
-            # print average reward till last episode
-            print_avg_reward = print_running_reward / print_running_episodes
-            print_avg_reward = round(print_avg_reward, 2)
-
-            print("Episode : {} \t\t Timestep : {} \t\t Average Reward : {}".format(i_episode, time_step, print_avg_reward))
-
-            print_running_reward = 0
-            print_running_episodes = 0
-
-            
-        # save model weights
-        if time_step % save_model_freq == 0:
-            print("--------------------------------------------------------------------------------------------")
-            print("saving model at : " + checkpoint_path)
-            ppo_agent.save(checkpoint_path)
-            print("model saved")
-            print("Elapsed Time  : ", datetime.now().replace(microsecond=0) - start_time)
-            print("--------------------------------------------------------------------------------------------")
-            
-        # break; if the episode is over
-        if done:
-            break
-
-    print_running_reward += current_ep_reward
-    print_running_episodes += 1
-    
-    log_running_reward += current_ep_reward
-    log_running_episodes += 1
-
-    i_episode += 1
-
-log_f.close()
-
+#####################################################
 #------ Ploting ----------
 
-plotTraining()
+plotTraining(path = "/home/cewinharhar/GITHUB/reincatalyze/PPO_logs/Acrobot-v1/test.csv" )
+plotTraining(path = "/home/cewinharhar/GITHUB/reincatalyze/PPO_logs/CartPole-v1/test.csv" )
 
 def plotTraining(path = "/home/cewinharhar/GITHUB/reincatalyze/PPO_logs/CartPole-v1/test.csv"):
     data = pd.read_csv(path)
@@ -529,73 +584,6 @@ output_size = len(list(aKGD31)) """
 ######################################################################################################################################################
 ######################################################################################################################################################
 
-
-class Policy(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, seed = 13):
-        super(Policy, self).__init__()
-        #set seed
-        torch.manual_seed(seed)
-        self.fc1 = nn.Linear(input_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, output_size)
-
-    def forward(self, x):
-        x = torch.relu(self.fc1(x))
-        x = self.fc2(x)
-        return x
-
-
-class PPOAgent:
-    def __init__(self, input_size, hidden_size, output_size, lr, gamma, eps_clip):
-        self.policy = Policy(input_size, hidden_size, output_size)
-        self.optimizer = optim.Adam(self.policy.parameters(), lr=lr)
-        self.gamma = gamma
-        self.eps_clip = eps_clip
-
-    def select_action(self, state):
-        state = torch.from_numpy(state).float()
-        logits = self.policy(state)
-        probs = torch.softmax(logits, dim=0)
-        dist = Categorical(probs)
-        action = dist.sample()
-        return action.item(), probs[action.item()].item()
-
-    def update(self, states, actions, log_probs, rewards, dones):
-        states = torch.from_numpy(np.array(states)).float()
-        actions = torch.from_numpy(np.array(actions)).long()
-        log_probs = torch.from_numpy(np.array(log_probs)).float()
-        rewards = torch.from_numpy(np.array(rewards)).float()
-        dones = torch.from_numpy(np.array(dones)).float()
-
-        returns = []
-        discounted_reward = 0
-        for reward, done in zip(reversed(rewards), reversed(dones)):
-            if done:
-                discounted_reward = 0
-            discounted_reward = reward + (self.gamma * discounted_reward)
-            returns.insert(0, discounted_reward)
-
-        #normalize 
-        returns = torch.tensor(returns)
-        returns = (returns - returns.mean()) / (returns.std(unbiased=False) + 1e-8) #add small constant to avoid divition by 0
-
-        old_log_probs = log_probs.detach()
-
-        for i in range(10):
-            logits = self.policy(states)
-            probs = torch.softmax(logits, dim=1)
-            dist = Categorical(probs)
-            entropy = dist.entropy().mean()
-            new_log_probs = dist.log_prob(actions)
-
-            ratio = (new_log_probs - old_log_probs).exp()
-            surr1 = ratio * returns
-            surr2 = torch.clamp(ratio, 1 - self.eps_clip, 1 + self.eps_clip) * returns
-            loss = -torch.min(surr1, surr2) + 0.5 * F.mse_loss(returns, torch.zeros_like(returns))
-            loss = loss.mean() - 0.01 * entropy.mean()
-
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
 
 
 def reward_function(originalSeq_, new_stateSeq_):
@@ -670,78 +658,9 @@ def deepMutRequest(seq, rationalMaskIdx):
         print(errMes)
         pass
 
-def main(original = "MSTETLRLQKARATEEGLAF", generations = 1000):
-    #TODO  TRY IF RL WORKS BY CHANGING THE APPROPIATE AMINO ACIDS TOGETHER WITH DEEPMUT AND EMBEDDING
-
-    input_size = 1024
-    hidden_size = 256
-    output_size = len(list(original))
-    lr = 0.001
-    gamma = 0.99
-    eps_clip = 0.2
-
-    done = False
-
-    agent = PPOAgent(input_size, hidden_size, output_size, lr, gamma, eps_clip)
-    originalSeq = stateSeq = list(original)
-    state = embeddingRequest(seq = stateSeq, returnNpArray = True)
-
-    i = 0
-    while not done:
-        i += 1
-        action, prob = agent.select_action(state)
-        new_stateSeq = stateSeq.copy()
-
-        #HERE COMES THE TRANSFORMER INPUT GAEPS
-        new_stateSeq = list(deepMutRequest(seq = new_stateSeq, rationalMaskIdx=[action])[0])
-        #new_stateSeq[action] = np.random.choice(list("ACDEFGHIKLMNPQRSTVWY"))
-
-        reward = reward_function(originalSeq_ = originalSeq, new_stateSeq_ = new_stateSeq)
-
-        new_state = embeddingRequest(seq = new_stateSeq, returnNpArray=True)
-        
-        print(
-            f"""------------ \n round:{i} \n------------ \n ori Seq: {"".join(originalSeq)} \n old Seq: {"".join(stateSeq)} \n new Seq: {"".join(new_stateSeq)} \n action: {str(action)} \n prob of action: {str(prob)} \n reward: {str(reward)}"""
-        )
-
-        state = new_state
-        stateSeq = new_stateSeq
-
-        agent.update([state], [action], [prob], [reward], [done])
-
-
-        if i == generations or reward == 0:
-            done = True
-
-    print("Final state:", state)
-
-
 #⨪-----------------------------------
 
 aKGD31 = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
 
 main( original = aKGD31)
-
-pprint("hi")
-
-
-
-#--------------------------------
-# Define the input data as a 1D tensor of length 10
-data = torch.randn(1024)
-
-cnn = convNet(activationFunction=nn.ReLU, kernel_size=8, padding=1, stride=2, dropOutProb=0.05)
-
-cnn2 = deepcopy(cnn)
-
-cnn2.cnn.append(
-                    nn.Sequential(
-                    nn.Linear(int(state_dim/2), 256),
-                    nn.ReLU(),
-                    nn.Linear(256, 300),
-                    nn.Softmax(dim = -1)               
-                )
-)
-
-oh = ActorCritic(state_dim=1024, action_dim=300, useCNN=True)
 
