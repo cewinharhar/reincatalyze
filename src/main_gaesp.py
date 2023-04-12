@@ -98,7 +98,6 @@ def main_gaesp(generation : int, mutantClass_ : mutantClass, config : configObj)
             ligandNrInSmiles = config.ligand_df.ligand_smiles.tolist()[ligandNr]
 
             print(f"Docking ligand {ligandNr + 1}/{len(config.ligand_df)}", end = "\r")
-            #lig4cmd = lig4cmd.replace("9.pdbqt", "1.pdbqt")
 
             #define output path for ligand docking results
             ligandOutPath = pj(config.data_dir, "processed", "docking_pred", config.runID, f"{mutantID}_ligand_{str(ligandNr+1)}.{config.output_formate}")
@@ -129,9 +128,11 @@ def main_gaesp(generation : int, mutantClass_ : mutantClass, config : configObj)
                 print(err)
 
             targetCarbonID = getTargetCarbonIDFromMol2File(ligandOutPath)
+
             distances = calculateDistanceFromTargetCarbonToFe(
                 receptorPath = receptor, ligandPath = ligandOutPath, 
-                targetCarbonID = targetCarbonID, num_modes = config.num_modes)
+                targetCarbonID = targetCarbonID, num_modes = config.num_modes
+                )
 
             vinaOutput["distTargetCarbonToFE"] = distances
 

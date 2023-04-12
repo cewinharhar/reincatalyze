@@ -1,12 +1,14 @@
 import hashlib
 from typing import List
 from pandas import DataFrame
+import numpy as np
 
 
 class mutantClass:
-    def __init__(self, runID: str, wildTypeAASeq: str, ligand_df : DataFrame):
+    def __init__(self, runID: str, wildTypeAASeq: str, wildTypeAAEmbedding: np.array, ligand_df : DataFrame):
         self.runID = runID
         self.wildTypeAASeq = wildTypeAASeq
+        self.wildTypeAAEmbedding = wildTypeAAEmbedding
         self.mutIDListAll = []
         self.generationDict = {}
         self.ligand_smiles = ligand_df["ligand_smiles"].tolist()
