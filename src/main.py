@@ -1,4 +1,3 @@
-from src.configObj import configObj   
 import os
 from os.path import join as pj
 import json
@@ -8,6 +7,7 @@ from pprint import pprint
 
 import torch
 
+from src.configObj import configObj   
 from src.mutantClass import mutantClass
 
 from src.mainHelpers.casFileExtract import casFileExtract
@@ -28,6 +28,7 @@ from src.residoraHelpers.PPO import PPO
 from src.main_gaesp import main_gaesp
 #from src.main_residora import main_residora
 
+
 #external
 import pandas as pd
 # Main pipe for the whole pipeline
@@ -47,9 +48,12 @@ runID = datetime.datetime.now().strftime("%d-%b-%Y")
 runID = "test"
 
 working_dir = os.getcwd()  # working director containing pdbs
+
 data_dir = pj(working_dir, "data/")
 log_dir_docking = pj(working_dir, "log/docking")
 model_dir = pj(working_dir, "models/residora")
+
+structure3D_dir = pj(data_dir, "processed", "3D_pred", runID)
 
 #------------------------------------------------
 config = configObj(
@@ -101,16 +105,19 @@ print(config.ligand_df)
 #------------------------------------------------
 #------------  GAESP CONFIG  ------------------------
 
-aKGD31 = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
+wildTypeStructurePath   = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo.cif"
+aKGD31                  = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
+
 #save the wildtype embedding, it is used multiple times
 aKGD31_embedding = embeddingRequest(aKGD31, returnNpArray=True)
 
 #Initialize the mutantClass
 mutants = mutantClass(
-    runID           = runID,
-    wildTypeAASeq   = aKGD31,
-    wildTypeAAEmbedding= aKGD31_embedding,
-    ligand_df       = config.ligand_df
+    runID                   = runID,
+    wildTypeAASeq           = aKGD31,
+    wildTypeAAEmbedding     = aKGD31_embedding,
+    wildTypeStructurePath   = wildTypeStructurePath,
+    ligand_df               = config.ligand_df
 )
 
 #------------------------------------------------
@@ -196,7 +203,7 @@ ppo_agent = PPO(
 #TODO make this iteratevly and input is json
 generation = 1
 rationalMaskIdx = [4,100,150]
-filePath = "/home/cewinharhar/GITHUB/gaesp/data/raw/aKGD_FE_oxo.cif"
+filePath = "/home/cewinharhar/GITHUB/gaesp/data/raw/aKGD_FE_oxo_obable.pdb"
 deepMutUrl = "http://0.0.0.0/deepMut"
 embeddingUrl = "http://0.0.0.0/embedding"
 nrOfSequences = 1
@@ -255,33 +262,44 @@ while time_step <= residoraConfig["max_training_timesteps"]:
                 )
         #update state
         state = embedding
+        
+
         #---------------------------------------
         #----add the newly generated mutants----
         for i in range(nrOfSequences):
             mutants.addMutant(
-                generation  = generation,
-                AASeq       = deepMutOutput[i],
-                embedding   = embedding[i],
-                mutRes      = rationalMaskIdx
+                generation          = generation,
+                AASeq               = deepMutOutput[i],
+                embedding           = embedding[i],
+                mutRes              = action,
+                mutantStructurePath = structure3D_dir
             )
 
-        #print(mutants.generationDict)
+        pprint(mutants.generationDict, indent = 4)
 
 
         #------------------------------------------------------------------------------------------
         # -------------  PYROPROLEX: pyRosetta-based protein relaxation -----------------
         #------------------------------------------------------------------------------------------
 
-        #TODO start with this pipeline
         #TODO Maybe consider to use open source pymol for this https://pymolwiki.org/index.php/Optimize
         #relaxes the mutants and stores the results in the mutantClass
+
+
+
         #TODO add filepath of newly generated mutants 3D structure
+
+
+        
 
         """ main_pyroprolex()
 
         #TODO remove
         mutants.generationDict[1]["6bfb59ed12766949900cc65d463ad60c0dbf3832"]["filePath"] = "/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/6bfb59ed12766949900cc65d463ad60c0dbf3832.cif"
         """
+
+
+
         #------------------------------------------------------------------------------------------
         # -------------  GAESP: GPU-accelerated Enzyme Substrate docking pipeline -----------------
         #------------------------------------------------------------------------------------------
@@ -292,10 +310,17 @@ while time_step <= residoraConfig["max_training_timesteps"]:
 
 
 
-        """ pycmd.load("/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/0309170a469d8622a1064258796cbc3f88bd5ef5.cif")
-        pycmd.save("/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/0309170a469d8622a1064258796cbc3f88bd5ef5.pdb") 
+        #-----------------------
 
-        command = f'~/ADFRsuite-1.0/bin/prepare_receptor -r /home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/0309170a469d8622a1064258796cbc3f88bd5ef5.pdb \
-                    -o /home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/0309170a469d8622a1064258796cbc3f88bd5ef5.pdb -A hydrogens -v -U nphs_lps_waters'  # STILL NEED TO FIGURE OUT HOW TO ACCEPT ALPHAFILL DATA
 
-        """
+
+
+
+
+""" pycmd.load("/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/0309170a469d8622a1064258796cbc3f88bd5ef5.cif")
+pycmd.save("/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/0309170a469d8622a1064258796cbc3f88bd5ef5.pdb") 
+
+command = f'~/ADFRsuite-1.0/bin/prepare_receptor -r /home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/0309170a469d8622a1064258796cbc3f88bd5ef5.pdb \
+            -o /home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/0309170a469d8622a1064258796cbc3f88bd5ef5.pdb -A hydrogens -v -U nphs_lps_waters'  # STILL NEED TO FIGURE OUT HOW TO ACCEPT ALPHAFILL DATA
+
+"""

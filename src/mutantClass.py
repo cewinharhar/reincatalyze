@@ -2,19 +2,39 @@ import hashlib
 from typing import List
 from pandas import DataFrame
 import numpy as np
+from pymol import cmd as pycmd
+from os.path import join as pj
 
+from src.deepMutHelpers.mutate_protein_biopython import mutate_protein_biopython
+from src.deepMutHelpers.getMutationsList import getMutationsList
 
 class mutantClass:
-    def __init__(self, runID: str, wildTypeAASeq: str, wildTypeAAEmbedding: np.array, ligand_df : DataFrame):
+    def __init__(self, runID: str, wildTypeAASeq: str, wildTypeAAEmbedding: np.array, wildTypeStructurePath : str, ligand_df : DataFrame):
         self.runID = runID
         self.wildTypeAASeq = wildTypeAASeq
         self.wildTypeAAEmbedding = wildTypeAAEmbedding
+
+        #check if base structure is CIF or not
+        if wildTypeStructurePath.endswith(".cif"):
+            print("cif file found, trying to convert")
+            newName = wildTypeStructurePath.replace(".cif", ".pdb")
+            pycmd.reinitialize()
+            pycmd.load(wildTypeStructurePath)
+            pycmd.save(newName)
+            print("CIF to pdb was successfull")
+            self.wildTypeStructurePath = newName
+            pycmd.reinitialize()
+        else:
+            self.wildTypeStructurePath = wildTypeStructurePath
+
         self.mutIDListAll = []
         self.generationDict = {}
         self.ligand_smiles = ligand_df["ligand_smiles"].tolist()
+        #create dict with empty entries for dockingResults
+        self.dockingResultsEmpty = {key: dict() for key in self.ligand_smiles}
 
     def addMutant(
-        self, generation: int, AASeq: str, embedding : List, mutRes: List
+        self, generation: int, AASeq: str, embedding : List, mutRes : List, mutantStructurePath : str
     ):
         assert isinstance(generation, int)
         assert isinstance(AASeq, str)
@@ -28,12 +48,30 @@ class mutantClass:
         # add id to overview ID list
         self.mutIDListAll.append(mutID)
 
-        #create dict with empty entries for dockingResults
-        dockingResultsEmpty = {key: dict() for key in self.ligand_smiles}
+        #---------------------------------------------------
+        #----Add the mutations to the wildtype structure----
+        mutantStructurePath = pj(mutantStructurePath, mutID+".pdb")
+        mutationList        = getMutationsList(wildtype_sequence = self.wildTypeAASeq, mutant_sequence = AASeq)
+
+        mutate_protein_biopython(
+            mutations               = mutationList,
+            amino_acid_sequence     = AASeq,
+            source_structure_path   = self.wildTypeStructurePath,
+            target_strcture_path    = mutantStructurePath
+        )
+
         # create subdict of mutant with AAseq and mutated residuals
-        mutDict = dict(AASeq=AASeq, embedding = embedding, mutRes=mutRes, dockingResults = dockingResultsEmpty)
+        mutDict = dict(
+            AASeq           = AASeq, 
+            embedding       = embedding, 
+            mutRes          = mutRes, 
+            structurePath   = mutantStructurePath, 
+            dockingResults  = self.dockingResultsEmpty
+            )
+        
         # add subdict to mutant dict
         self.generationDict[generation][mutID] = mutDict
+
 
     def addDockingResult(
             self, generation : int, mutID : str,
