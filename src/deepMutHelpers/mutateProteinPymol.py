@@ -21,6 +21,7 @@ def mutateProteinPymol(mutations : List[Tuple], amino_acid_sequence : str, sourc
         sys.exit(1)
 
     # Load structure into PyMOL
+    pycmd.reinitialize()
     pycmd.load(source_structure_path, 'protein')
 
     # Iterate through the mutations
@@ -32,18 +33,18 @@ def mutateProteinPymol(mutations : List[Tuple], amino_acid_sequence : str, sourc
         pycmd.wizard("mutagenesis")
         pycmd.refresh_wizard()
         pycmd.get_wizard().set_mode(one_to_three(target_aa))
-        pycmd.select("residue_to_mutate", f"resi {idx}")
+        pycmd.select("residue_to_mutate", f"resi {idx + 1 }") #+1 because starts with 1
         pycmd.get_wizard().do_select("residue_to_mutate")
         pycmd.get_wizard().apply()
         pycmd.set_wizard("done")
 
     # Save mutated structure
     pycmd.save(target_structure_path, 'protein')
-    print(f"Mutated structure saved to {target_structure_path}")
+    #print(f"Mutated structure saved to {target_structure_path}")
 
 if __name__ == "_main_":
     amino_acid_sequence = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
-    mutations = [(3, "E", "N")]
+    mutations = [(18, "A", "W")]
     source_structure_path = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo.pdb"
     target_structure_path = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/MUTANT.pdb"
 

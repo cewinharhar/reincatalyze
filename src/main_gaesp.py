@@ -64,7 +64,7 @@ from src.gaespHelpers.calculateDistanceFromTargetCarbonToFe import calculateDist
 
 # ------------------------------------------------
 
-def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config : configObj, ligandNr : int):
+def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config : configObj, ligandNr : int, distanceTreshold : float = 10.0, punishment : float = -20.0 ):
     """ Make docking predictionand store results in the mutantClass
     
     
@@ -90,7 +90,7 @@ def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config
     ligand4Cmd = pj(config.ligand_files, f"ligand_{tmp}.pdbqt")
     #--------------------------------------------------------
     
-    print(f"Preparing for Docking: \n (Benjamin... time to wake up)")
+    #print(f"Preparing for Docking: \n (Benjamin... time to wake up)")
 
     #extract ligand smiles to store in the dockingresults in the mutantClass
     ligandNrInSmiles = config.ligand_df.ligand_smiles.tolist()[ligandNr]
@@ -102,9 +102,10 @@ def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config
 
     #you could add --exhaustiveness 32 for more precise solution
     vina_docking=f"{config.vina_gpu_cuda_path} --thread {config.thread} --receptor {receptor} --ligand {ligand4Cmd} \
-                    --seed 42 --center_x {cx} --center_y {cy} --center_z {cz}  \
+                    --seed {config.seed} --center_x {cx} --center_y {cy} --center_z {cz}  \
                     --size_x {sx} --size_y {sy} --size_z {sz} \
-                    --out {ligandOutPath} --num_modes {config.num_modes}"
+                    --out {ligandOutPath} --num_modes {config.num_modes} --exhaustiveness 1"
+    
     #os.system(vina_docking)
     #run command
     ps = subprocess.Popen([vina_docking],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
@@ -114,7 +115,6 @@ def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config
         #extract results from vina docking
         vinaOutput   = extractTableFromVinaOutput(stdout.decode())
         nrOfVinaPred = len(vinaOutput)
-        print(f" \n Docking successfull!! \n \n {vinaOutput}", end = "\r")
     except Exception as err:
         print(err)
 
@@ -124,7 +124,7 @@ def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config
         splitDockRes = f"""obabel {ligandOutPath} -O {ligandOutPath.replace(".pdbqt", "_.mol2")} -m"""
         ps = subprocess.Popen([splitDockRes],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
         stdout, stderr = ps.communicate()
-        print("obabel output:", stdout)
+        #print("obabel output:", stdout)
     except Exception as err:
         print(err)
 
@@ -141,6 +141,9 @@ def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config
 
     vinaOutput["distTargetCarbonToFE"] = distances
 
+    print(f" \n Docking successfull!! \n \n {vinaOutput}")
+    print(f"Number of results: {nrOfVinaPred}")    
+
     #save results in corresponding mutantclass subdict
     mutantClass_.addDockingResult(
         generation      = generation, 
@@ -150,5 +153,14 @@ def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config
         dockingResTable = vinaOutput
     )
 
+    #the reward is calculated so that the distance to the target carbon has the most influence
+    mode, affinity, distance = vinaOutput[vinaOutput.distTargetCarbonToFE == vinaOutput.distTargetCarbonToFE.min()].values[0]
+    
+    if distance < distanceTreshold:
+        distFactor = distanceTreshold - distance
+        reward = -1 * affinity * distFactor**2
+    else:
+        reward = punishment
 
+    return reward
 

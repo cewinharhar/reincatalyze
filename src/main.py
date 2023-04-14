@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 import requests
 from pprint import pprint
+from copy import deepcopy
 
 import torch
 
@@ -11,6 +12,9 @@ from pymol import cmd as pycmd
 
 from src.configObj import configObj   
 from src.mutantClass import mutantClass
+
+from src.deepMutHelpers.esm2_getPred import esm2_getPred
+from src.deepMutHelpers.esm2_getEmbedding import esm2_getEmbedding
 
 from src.mainHelpers.casFileExtract import casFileExtract
 from src.mainHelpers.cas2smiles import cas2smiles 
@@ -20,6 +24,7 @@ from src.mainHelpers.prepare4APIRequest import prepare4APIRequest
 
 from src.mainHelpers.deepMutRequest import deepMutRequest
 from src.mainHelpers.embeddingRequest import embeddingRequest
+from src.mainHelpers.saveConfigAndMutantsAsPickle import saveConfigAndMutantsAsPickle
 
 from src.residoraHelpers.convNet import convNet
 from src.residoraHelpers.ActorCritic import ActorCritic
@@ -33,7 +38,16 @@ from src.main_gaesp import main_gaesp
 
 #external
 import pandas as pd
+import numpy as np
+
+from transformers import pipeline #if problems with libssl.10 -> conda update tokenizers
+#from transformers import AutoModelForMaskedLM
 # Main pipe for the whole pipeline
+
+#CLASSIFIER
+classifier = pipeline("fill-mask", model="facebook/esm2_t6_8M_UR50D")
+embedder = pipeline("feature-extraction", model="facebook/esm2_t6_8M_UR50D")
+
 
 ################################################################################
 """ _____ ____  _   _ ________________ 
@@ -46,7 +60,7 @@ import pandas as pd
 ################################################################################
 
 #runID = datetime.datetime.now().strftime("%d-%b-%Y_%H:%M")
-runID = datetime.datetime.now().strftime("%d-%b-%Y")
+runID = datetime.now().strftime("%d-%b-%Y")
 runID = "test"
 
 working_dir = os.getcwd()  # working director containing pdbs
@@ -71,7 +85,8 @@ config = configObj(
     vina_gpu_cuda_path="/home/cewinharhar/GITHUB/Vina-GPU-CUDA/Vina-GPU",
     thread          = 8192,
     metal_containing= True,
-    num_modes       = 3 #number of poses that are beeing predicted    
+    num_modes       = 3, #number of poses that are beeing predicted    
+    seed            = 13
 )
 #------------------------------------------------
 #------------  LIGANDS  -------------------------
@@ -111,8 +126,9 @@ print(config.ligand_df)
 wildTypeStructurePath   = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo.cif"
 aKGD31                  = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
 
-#save the wildtype embedding, it is used multiple times
-aKGD31_embedding = embeddingRequest(aKGD31, returnNpArray=True)
+#save the wildtype embedding, it is used multiple times   
+aKGD31_embedding   = esm2_getEmbedding(sequence = aKGD31, embedder=embedder, returnList = True)
+#aKGD31_embedding = embeddingRequest(aKGD31, returnNpArray=True)
 
 #Initialize the mutantClass
 mutants = mutantClass(
@@ -137,28 +153,32 @@ if not os.path.exists(log_dir_residora):
 checkpoint_path = pj(model_dir, f"residora_{runID}.pth")
 print("save checkpoint path : " + checkpoint_path)
 
+#-------------------------
+max_ep_len = 10
+#-------------------------
 residoraConfig = dict(
     log_dir         = log_dir_residora,
-    state_dim       = 1024,
+    state_dim       = 320,
     action_dim      = len(mutants.wildTypeAASeq),
-    max_ep_len      = 50,                    # max timesteps in one episode
-    max_training_timesteps = int(1e5),   # break training loop if timeteps > max_training_timesteps
-    print_freq      = 50 * 4,     # print avg reward in the interval (in num timesteps)
-    log_freq        = 50 * 2,       # log avg reward in the interval (in num timesteps)
-    save_model_freq = int(2e2),      # save model frequency (in num timesteps)
+    max_ep_len      = max_ep_len,                    # max timesteps in one episode
+    max_training_timesteps = int(1e3),   # break training loop if timeteps > max_training_timesteps
+    print_freq      = max_ep_len * 4,     # print avg reward in the interval (in num timesteps)
+    log_freq        = max_ep_len * 2,       # log avg reward in the interval (in num timesteps)
+    save_model_freq = int(5e1),      # save model frequency (in num timesteps)
     action_std      = None,
-    update_timestep = 50 * 4,     # update policy every n timesteps
+    update_timestep = max_ep_len*4,     # update policy every n timesteps
+    done            = False,
 
-    K_epochs        = 20,               # update policy for K epochs
+    K_epochs        = 50,               # update policy for K epochs
     eps_clip        = 0.2,              # clip parameter for PPO
     gamma           = 0.99,                # discount factor
     lr_actor        = 0.0003,       # learning rate for actor network
     lr_critic       = 0.001,       # learning rate for critic network
     random_seed     = 13,         # set random seed if required (0 = no random seed)
 
-    nrNeuronsInHiddenLayers = [512,256],
+    nrNeuronsInHiddenLayers = [256,256],
     activationFunction = "tanh",
-    useCNN          = True,
+    useCNN          = False,
     stride          = 4,
     kernel_size     = 6, #IF YOU CHANGE ABOVE 6 YOU LOOSE 2 DIMs
     out_channel     = 2,
@@ -190,6 +210,8 @@ ppo_agent = PPO(
     device      = residoraConfig["device"]
 )
 
+print(ppo_agent.policy)
+
 #/////////////////////////////////////////////////////////////
 """
   _____ _____ _____  ______ _      _____ _   _ ______ 
@@ -204,14 +226,16 @@ ppo_agent = PPO(
 
 
 #TODO make this iteratevly and input is json
-generation = 1
+
+#nrOfSequences = 5
 filePath = "/home/cewinharhar/GITHUB/gaesp/data/raw/aKGD_FE_oxo_obable.pdb"
 deepMutUrl = "http://0.0.0.0/deepMut"
 embeddingUrl = "http://0.0.0.0/embedding"
-nrOfSequences = 1
 
 ##################################################################################
 ##################################################################################
+
+ligandNr = 1
 
 start_time = datetime.now().replace(microsecond=0)
 print_running_reward = 0
@@ -225,16 +249,24 @@ i_episode = 0
 log_f = open(pj(residoraConfig["log_dir"], runID+".csv"), "w+")
 log_f.write('episode,timestep,reward\n')
 
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 while time_step <= residoraConfig["max_training_timesteps"]:
+    
+    generation = 1
 
     #Reset the state so that the agent reconsiders changes it has done and makes more effective mutations
     seq   = mutants.wildTypeAASeq
     state = mutants.wildTypeAAEmbedding
     current_ep_reward = 0
+    mutID = 0 #to initialize the structure path for the wildtype
 
     for t in range(1, residoraConfig["max_ep_len"]+1):
+
+        print("-------------------------------")
+        print(f"Generation: {generation} \n episode: {t}")
+        print("-------------------------------")
         
         # select action with policy
         action = ppo_agent.select_action_exploitation(state) #action starts at 0 and goes up to the len-1 of the target
@@ -242,92 +274,152 @@ while time_step <= residoraConfig["max_training_timesteps"]:
         #-----------------------------------------
         # -------------  DeepMut -----------------
         #INIT WITH WILDTYPE
-        deepMutOutput = deepMutRequest(
-                        seq                 = [x for x in seq],
-                        rationalMaskIdx     = [action] ,
-                        deepMutUrl          = deepMutUrl,
-                        nrOfSequences       = nrOfSequences,
-                        task                = "rational",
-                        huggingfaceID       = "Rostlab/prot_t5_xl_uniref50",
-                        max_length          = 512,
-                        do_sample           = True,
-                        temperature         = 1.5,
-                        top_k               = 20
-            )
+        #deepMutOutput = deepMutRequest(
+        #                seq                 = [x for x in seq],
+        #                rationalMaskIdx     = [130, 135, 210] ,
+        #                deepMutUrl          = deepMutUrl,
+        #                nrOfSequences       = nrOfSequences,
+        #                task                = "rational",
+        #                huggingfaceID       = "Rostlab/prot_t5_xl_uniref50",
+        #                max_length          = 512,
+        #                do_sample           = True,
+        #                temperature         = 0.7,
+        #                top_k               = 3
+        #    )
+        #TODO watch out that the mean Embedding doesnt carry other embeddings for multi site mutations
+        predictedAA, predictedSeq   = esm2_getPred(classifier = classifier, sequence = seq, residIdx = [action])
+
         #---------------------------------------
         #------------ embeddings ---------------
         #deepMutOutput = ["MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"]
-        embedding = embeddingRequest(
-                    seq = deepMutOutput,
-                    returnNpArray=False,
-                    embeddingUrl=embeddingUrl
-                )
+        #embedding = embeddingRequest(
+        #            seq = meanEmbedding,
+        #            returnNpArray=False,
+        #            embeddingUrl=embeddingUrl
+        #        )
         #update state
-        state = embedding
+            #calculate mean embedding
 
+        #iterate over the predicted AA's (first ones have higher score), if the same as wildtype, skip
+        for idx, AA in enumerate(predictedAA):
+            if AA != seq[action]:
+                mutAA = AA
+                break            
+
+        meanEmbedding = esm2_getEmbedding(predictedSeq[idx], embedder=embedder) 
         #---------------------------------------------------------------------------------------------------
         #----Inlcudes: Mutation and the addition of the newly generated mutants in the mutantcClass dict----
-        mutationList = [(action, mutants.wildTypeAASeq[action], deepMutOutput[0][action])]
 
-        for i in range(nrOfSequences):
-            mutID, mutationList = mutants.addMutant(
-                        generation          = generation,
-                        AASeq               = deepMutOutput[i],
-                        embedding           = embedding[i],
-                        mutRes              = action,
-                        mutantStructurePath = structure3D_dir, #the mutation is happening here
-                        mutationList        = mutationList
+        mutationList = [(action, seq[action], mutAA)]
+
+        print(f"mutationList: {mutationList}")
+    
+        #update state and seq
+        state   = deepcopy(meanEmbedding)
+        seq     = predictedSeq[idx]
+
+        mutID, mutationList = mutants.addMutant(
+                    generation          = generation,
+                    AASeq               = seq,
+                    embedding           = state,
+                    mutRes              = action,
+                    sourceStructure     = mutID, #mutID from last iteration 
+                    mutantStructurePath = structure3D_dir, #the mutation is happening here
+                    mutationList        = mutationList
                     )
 
-        pprint(mutants.generationDict, indent = 4)
-
-
+        #pprint(mutants.generationDict, indent = 4)
         #------------------------------------------------------------------------------------------
         # -------------  PYROPROLEX: pyRosetta-based protein relaxation -----------------
         #------------------------------------------------------------------------------------------
 
         #TODO Maybe consider to use open source pymol for this https://pymolwiki.org/index.php/Optimize
         #relaxes the mutants and stores the results in the mutantClass
-
-
-
         #TODO add filepath of newly generated mutants 3D structure
-
-        """ main_pyroprolex()
-
-        #TODO remove
-        mutants.generationDict[1]["6bfb59ed12766949900cc65d463ad60c0dbf3832"]["filePath"] = "/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/6bfb59ed12766949900cc65d463ad60c0dbf3832.cif"
-        """
-
-
 
         #------------------------------------------------------------------------------------------
         # -------------  GAESP: GPU-accelerated Enzyme Substrate docking pipeline -----------------
         #------------------------------------------------------------------------------------------
-        import pickle
-        from src.main_gaesp import main_gaesp
+        #import pickle
+        #from src.main_gaesp import main_gaesp
 
-        generation = 1
+        #generation  = 1
+        #ligandNr    = 1
 
-        #with open("/home/cewinharhar/GITHUB/reincatalyze/log/config.pkl", "wb") as c:
-        #    pickle.dump(config, file = c)
-        #    c.close()
-        #with open("/home/cewinharhar/GITHUB/reincatalyze/log/mutants.pkl", "wb") as m:
-        #    pickle.dump(mutants, file = m)
-        #    m.close()#
+        #saveConfigAndMutantsAsPickle(config, mutants)
 
-        with open("/home/cewinharhar/GITHUB/reincatalyze/log/config.pkl", "rb") as cl:
-            config = pickle.load(cl)
-            config.num_poses = 3
-        with open("/home/cewinharhar/GITHUB/reincatalyze/log/mutants.pkl", "rb") as ml:
-            mutants = pickle.load(ml)
-            mutID = list(mutants.generationDict.get(1).keys())[0]
+        #with open("/home/cewinharhar/GITHUB/reincatalyze/log/config.pkl", "rb") as cl:
+        #    config = pickle.load(cl)
+        #    config.num_modes = 3
+        #with open("/home/cewinharhar/GITHUB/reincatalyze/log/mutants.pkl", "rb") as ml:
+        #    mutants = pickle.load(ml)
+        #    mutID = list(mutants.generationDict[1].keys())[0]
 
-        # TODO retrieve a reward
         #the information is beeing stored in the mutantClass
-        main_gaesp(generation=generation, mutID = mutID, mutantClass_ = mutants, config=config)
+        reward = main_gaesp(generation=generation, mutID = mutID, mutantClass_ = mutants, config=config, ligandNr = ligandNr)
 
         #-----------------------
+        ppo_agent.rewards.append(reward)
+        ppo_agent.isTerminals.append(residoraConfig["done"]) #TODO make done depend on the enzyme stability
+        
+        time_step +=1
+        current_ep_reward += reward
+
+        # update PPO agent
+        if time_step % residoraConfig["update_timestep"] == 0:
+            ppo_agent.update()
+
+        # log in logging file
+        if time_step % residoraConfig["log_freq"]  == 0:
+
+            # log average reward till last episode
+            log_avg_reward = log_running_reward / log_running_episodes
+            log_avg_reward = round(log_avg_reward, 4)
+
+            log_f.write('{},{},{}\n'.format(i_episode, time_step, log_avg_reward))
+            log_f.flush()
+
+            log_running_reward = 0
+            log_running_episodes = 0
+
+        # printing average reward
+        if time_step % residoraConfig["print_freq"] == 0:
+
+            # print average reward till last episode
+            print_avg_reward = print_running_reward / print_running_episodes
+            print_avg_reward = round(print_avg_reward, 2)
+
+            print("###########################################################################")
+            print("Episode : {} \t\t Timestep : {} \t\t Average Reward : {}".format(i_episode, time_step, print_avg_reward))
+            print("###########################################################################")
+
+            print_running_reward = 0
+            print_running_episodes = 0
+
+            
+        # save model weights
+        if time_step % residoraConfig["save_model_freq"] == 0:
+            print("--------------------------------------------------------------------------------------------")
+            print("saving model at : " + checkpoint_path)
+            ppo_agent.save(checkpoint_path)
+            print("model saved")
+            print("Elapsed Time  : ", datetime.now().replace(microsecond=0) - start_time)
+            print("--------------------------------------------------------------------------------------------")
+            
+        # break; if the episode is over
+        if residoraConfig["done"]:
+            break
+
+    print_running_reward += current_ep_reward
+    print_running_episodes += 1
+    
+    log_running_reward += current_ep_reward
+    log_running_episodes += 1
+
+    i_episode += 1
+    generation += 1
+
+log_f.close()        
 
 
 

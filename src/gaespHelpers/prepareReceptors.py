@@ -33,19 +33,24 @@ def prepareReceptors(runID: str, generation: int, mutID : str, mutantClass_: mut
         mutantClass_.generationDict[generation][mutID]["structurePath"] = newName
         pycmd.reinitialize()
 
-    assert mutantClass_.generationDict[generation][mutID]["structurePath"].endswith(".pdb")
+    if mutantClass_.generationDict[generation][mutID]["structurePath"].endswith(".pdb"):
+        #print("Structure is in PDB file")
+        replaceStr = ".pdb"
+    elif mutantClass_.generationDict[generation][mutID]["structurePath"].endswith(".pdbqt"):
+        #print("Structure is in PDBQT file")
+        replaceStr = ".pdbqt"        
 
     # ADFRsuit transformation
     try:
         command = f'~/ADFRsuite-1.0/bin/prepare_receptor -r {mutantClass_.generationDict[generation][mutID]["structurePath"]} \
-                    -o {mutantClass_.generationDict[generation][mutID]["structurePath"].replace(".pdb", ".pdbqt")} -A hydrogens -v -U nphs_lps_waters'  # STILL NEED TO FIGURE OUT HOW TO ACCEPT ALPHAFILL DATA
+                    -o {mutantClass_.generationDict[generation][mutID]["structurePath"].replace(replaceStr, ".pdbqt")} -A hydrogens -v -U nphs_lps_waters'  # STILL NEED TO FIGURE OUT HOW TO ACCEPT ALPHAFILL DATA
 
         #run command
         ps = subprocess.Popen([command],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)  
         stdout,stderr = ps.communicate()
 
-        print(stdout)
-        print(stderr)
+        #print(stdout)
+        #print(stderr)
         #print(stdout)
         if stderr != None:
             print(stderr,'error')
@@ -62,7 +67,7 @@ def prepareReceptors(runID: str, generation: int, mutID : str, mutantClass_: mut
 
     # find (metal) center
     if config.metal_containing:
-        print("Metal coordinates identified")
+        #print("Metal coordinates identified")
         #MAYBE ADD A FILTER FOR CHAIN SELECTION
         pycmd.select("metals")
         xyz = pycmd.get_coords("sele")

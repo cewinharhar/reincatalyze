@@ -348,3 +348,7 @@ temperature does not have big influence on diversity
 """ from pandas2fasta import pandas2Fasta
 os.getcwd()
 pandas2Fasta(rd, fromTokenizer = True, filepath = "predictionFolder/maskFilling3.fasta") """
+
+#------------------------------------------------------------------------------
+
+

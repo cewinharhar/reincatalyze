@@ -27,13 +27,13 @@ class mutantClass:
             self.wildTypeStructurePath = wildTypeStructurePath
 
         self.mutIDListAll = []
-        self.generationDict = {}
+        self.generationDict = {} 
         self.ligand_smiles = ligand_df["ligand_smiles"].tolist()
         #create dict with empty entries for dockingResults
         self.dockingResultsEmpty = {key: dict() for key in self.ligand_smiles}
 
     def addMutant(
-        self, generation: int, AASeq: str, embedding : List, mutRes : List, mutantStructurePath : str, mutationList : List[Tuple]
+        self, generation: int, AASeq: str, embedding : List, mutRes : List, sourceStructure : str, mutantStructurePath : str, mutationList : List[Tuple]
     ):
         assert isinstance(generation, int)
         assert isinstance(AASeq, str)
@@ -52,11 +52,17 @@ class mutantClass:
         mutantStructurePath = pj(mutantStructurePath, mutID+".pdb")
         #mutationList        = getMutationsList(wildtype_sequence = self.wildTypeAASeq, mutant_sequence = AASeq)
 
+        #Get the structure path form the old mutant
+        if sourceStructure == 0:
+            sourceStructure = self.wildTypeStructurePath
+        else:
+            sourceStructure = self.generationDict[generation][sourceStructure]["structurePath"]
+
         mutateProteinPymol(
             mutations               = mutationList,
-            amino_acid_sequence     = AASeq,
-            source_structure_path   = self.wildTypeStructurePath,
-            target_strcture_path    = mutantStructurePath
+            amino_acid_sequence     = self.wildTypeAASeq, #this is just to check if correct mutations List
+            source_structure_path   = sourceStructure,
+            target_structure_path   = mutantStructurePath
         )
 
         # create subdict of mutant with AAseq and mutated residuals
@@ -64,6 +70,7 @@ class mutantClass:
             AASeq           = AASeq, 
             embedding       = embedding, 
             mutRes          = mutRes, 
+            mutation        = mutationList[0][1]+str(mutationList[0][0])+mutationList[0][2],
             structurePath   = mutantStructurePath, 
             dockingResults  = self.dockingResultsEmpty
             )

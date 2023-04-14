@@ -28,7 +28,8 @@ class configObj:
         # patients
         exhaustiveness=3,
         # How different do the states have to be to be "different"
-        energy_range=3
+        energy_range=3,
+        seed = 13
     ):
         self.runID = runID
         self.working_dir = working_dir
@@ -48,7 +49,8 @@ class configObj:
         self.metal_containing=metal_containing
         self.align=align
         self.output_formate=output_formate
-        self.num_modes=9
+        self.num_modes=num_modes
+        self.seed = seed
         self.exhaustiveness=3
         self.energy_range=3
 
