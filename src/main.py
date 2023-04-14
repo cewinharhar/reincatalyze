@@ -1,11 +1,13 @@
 import os
 from os.path import join as pj
 import json
-import datetime
+from datetime import datetime
 import requests
 from pprint import pprint
 
 import torch
+
+from pymol import cmd as pycmd
 
 from src.configObj import configObj   
 from src.mutantClass import mutantClass
@@ -61,14 +63,15 @@ config = configObj(
     #runID="testRun",
     runID=runID,
     #---------------
-    working_dir=working_dir,
-    data_dir=data_dir,
-    log_dir=log_dir_docking,
-    NADP_cofactor=False,
-    gpu_vina=True,
+    working_dir     = working_dir,
+    data_dir        = data_dir,
+    log_dir         = log_dir_docking,
+    NADP_cofactor   = False,
+    gpu_vina        = True,
     vina_gpu_cuda_path="/home/cewinharhar/GITHUB/Vina-GPU-CUDA/Vina-GPU",
-    thread = 8192,
-    metal_containing=True    
+    thread          = 8192,
+    metal_containing= True,
+    num_modes       = 3 #number of poses that are beeing predicted    
 )
 #------------------------------------------------
 #------------  LIGANDS  -------------------------
@@ -88,13 +91,13 @@ subSmiles = ['CC(=O)CCc1ccccc1', 'OC(=O)CCc1ccccc1', 'COc1cccc(CCC(O)=O)c1', 'CO
 
 #---------------------------------------------
 #PREPARE THEM LIGANDS
-config = prepareLigand4Vina(smiles = subSmiles, config = config)
+config = prepareLigand4Vina(smiles = subSmiles, subName = subName, config = config)
 print("Ligands are stored in: {config.ligand_files}")
 #---------------------------------------------
 
 #Create dataframe and store in config
 ligand2Df(
-    subName=subName,
+    subName=[name.replace(" ", "_") for name in subName], #add underscore to be sure
     subSmiles=subSmiles,
     subCas=subCas,
     config=config
@@ -202,7 +205,6 @@ ppo_agent = PPO(
 
 #TODO make this iteratevly and input is json
 generation = 1
-rationalMaskIdx = [4,100,150]
 filePath = "/home/cewinharhar/GITHUB/gaesp/data/raw/aKGD_FE_oxo_obable.pdb"
 deepMutUrl = "http://0.0.0.0/deepMut"
 embeddingUrl = "http://0.0.0.0/embedding"
@@ -262,18 +264,20 @@ while time_step <= residoraConfig["max_training_timesteps"]:
                 )
         #update state
         state = embedding
-        
 
-        #---------------------------------------
-        #----add the newly generated mutants----
+        #---------------------------------------------------------------------------------------------------
+        #----Inlcudes: Mutation and the addition of the newly generated mutants in the mutantcClass dict----
+        mutationList = [(action, mutants.wildTypeAASeq[action], deepMutOutput[0][action])]
+
         for i in range(nrOfSequences):
-            mutants.addMutant(
-                generation          = generation,
-                AASeq               = deepMutOutput[i],
-                embedding           = embedding[i],
-                mutRes              = action,
-                mutantStructurePath = structure3D_dir
-            )
+            mutID, mutationList = mutants.addMutant(
+                        generation          = generation,
+                        AASeq               = deepMutOutput[i],
+                        embedding           = embedding[i],
+                        mutRes              = action,
+                        mutantStructurePath = structure3D_dir, #the mutation is happening here
+                        mutationList        = mutationList
+                    )
 
         pprint(mutants.generationDict, indent = 4)
 
@@ -289,9 +293,6 @@ while time_step <= residoraConfig["max_training_timesteps"]:
 
         #TODO add filepath of newly generated mutants 3D structure
 
-
-        
-
         """ main_pyroprolex()
 
         #TODO remove
@@ -303,12 +304,28 @@ while time_step <= residoraConfig["max_training_timesteps"]:
         #------------------------------------------------------------------------------------------
         # -------------  GAESP: GPU-accelerated Enzyme Substrate docking pipeline -----------------
         #------------------------------------------------------------------------------------------
+        import pickle
+        from src.main_gaesp import main_gaesp
+
+        generation = 1
+
+        #with open("/home/cewinharhar/GITHUB/reincatalyze/log/config.pkl", "wb") as c:
+        #    pickle.dump(config, file = c)
+        #    c.close()
+        #with open("/home/cewinharhar/GITHUB/reincatalyze/log/mutants.pkl", "wb") as m:
+        #    pickle.dump(mutants, file = m)
+        #    m.close()#
+
+        with open("/home/cewinharhar/GITHUB/reincatalyze/log/config.pkl", "rb") as cl:
+            config = pickle.load(cl)
+            config.num_poses = 3
+        with open("/home/cewinharhar/GITHUB/reincatalyze/log/mutants.pkl", "rb") as ml:
+            mutants = pickle.load(ml)
+            mutID = list(mutants.generationDict.get(1).keys())[0]
 
         # TODO retrieve a reward
         #the information is beeing stored in the mutantClass
-        main_gaesp(generation=generation, mutantClass_ = mutants, config=config)
-
-
+        main_gaesp(generation=generation, mutID = mutID, mutantClass_ = mutants, config=config)
 
         #-----------------------
 

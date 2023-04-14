@@ -13,7 +13,7 @@ def getMutationsList(wildtype_sequence, mutant_sequence):
 
     mutation_list = []
 
-    for idx, (wt_aa, mt_aa) in enumerate(zip(wildtype_sequence, mutant_sequence), start=1):
+    for idx, (wt_aa, mt_aa) in enumerate(zip(wildtype_sequence, mutant_sequence)):
         if wt_aa != mt_aa:
             mutation_list.append((idx, wt_aa, mt_aa))
 
