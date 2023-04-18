@@ -74,27 +74,25 @@ class ActorCritic(nn.Module):
             )
 
         else:      
-            #create actor and critic
-            self.actor = nn.Sequential(
-                nn.Linear(state_dim, nrNeuronsInHiddenLayers[0]),
-                self.activationFunction(), #saves memory
-                nn.Dropout(dropOutProb),
-                nn.Linear(nrNeuronsInHiddenLayers[0], nrNeuronsInHiddenLayers[1]),
-                self.activationFunction(), #saves memory
-                nn.Dropout(dropOutProb),
-                nn.Linear(nrNeuronsInHiddenLayers[1], action_dim),
-                nn.Softmax(dim = -1)
-            )
+
+            layers = [nn.Linear(state_dim, nrNeuronsInHiddenLayers[0]),
+                      self.activationFunction(),
+                      nn.Dropout(dropOutProb)]
+
+            for i in range(1, len(nrNeuronsInHiddenLayers)):
+                layers.append(nn.Linear(nrNeuronsInHiddenLayers[i - 1], nrNeuronsInHiddenLayers[i]))
+                layers.append(self.activationFunction())  # saves memory
+                layers.append(nn.Dropout(dropOutProb))
+
+            #shared_layers = nn.Sequential(*layers) #DO NOT USE deepcopy, you want the layers to be shared and be trained together
+
+            self.actor = nn.Sequential(*deepcopy(layers),
+                                        nn.Linear(nrNeuronsInHiddenLayers[-1], action_dim),
+                                        nn.Softmax(dim = -1))
             #the critic has only 1 output node which is the estimation of how well the actor has decided
-            self.critic = nn.Sequential(
-                nn.Linear(state_dim, nrNeuronsInHiddenLayers[0]),
-                self.activationFunction(), #saves memory
-                nn.Dropout(dropOutProb),
-                nn.Linear(nrNeuronsInHiddenLayers[0], nrNeuronsInHiddenLayers[1]),
-                self.activationFunction(), #saves memory
-                nn.Dropout(dropOutProb),
-                nn.Linear(nrNeuronsInHiddenLayers[1], 1)
-            )
+            self.critic = nn.Sequential(*deepcopy(layers),
+                                        nn.Linear(nrNeuronsInHiddenLayers[-1], 1)
+                                        )
 
     def select_action_exploration(self, embedding_):  #also called select_action
         """ This function takes in the embedding and makes a decision on which residue to mutate

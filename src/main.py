@@ -138,6 +138,8 @@ mutants = mutantClass(
     wildTypeStructurePath   = wildTypeStructurePath,
     ligand_df               = config.ligand_df
 )
+#relax the wildtype structure
+mutants.relaxWildType(max_iter = 100)
 
 #------------------------------------------------
 #---------  RESIDORA CONFIG  --------------------
@@ -154,14 +156,14 @@ checkpoint_path = pj(model_dir, f"residora_{runID}.pth")
 print("save checkpoint path : " + checkpoint_path)
 
 #-------------------------
-max_ep_len = 10
+max_ep_len = 1
 #-------------------------
 residoraConfig = dict(
     log_dir         = log_dir_residora,
     state_dim       = 320,
     action_dim      = len(mutants.wildTypeAASeq),
     max_ep_len      = max_ep_len,                    # max timesteps in one episode
-    max_training_timesteps = int(1e3),   # break training loop if timeteps > max_training_timesteps
+    max_training_timesteps = int(1e5),   # break training loop if timeteps > max_training_timesteps
     print_freq      = max_ep_len * 4,     # print avg reward in the interval (in num timesteps)
     log_freq        = max_ep_len * 2,       # log avg reward in the interval (in num timesteps)
     save_model_freq = int(5e1),      # save model frequency (in num timesteps)
@@ -176,7 +178,7 @@ residoraConfig = dict(
     lr_critic       = 0.001,       # learning rate for critic network
     random_seed     = 13,         # set random seed if required (0 = no random seed)
 
-    nrNeuronsInHiddenLayers = [256,256],
+    nrNeuronsInHiddenLayers = [256],
     activationFunction = "tanh",
     useCNN          = False,
     stride          = 4,
@@ -212,6 +214,17 @@ ppo_agent = PPO(
 
 print(ppo_agent.policy)
 
+#------------------------------------------------
+#---------  PYROPROLEX CONFIG  --------------------
+""" pyrosettaRelaxConfig = dict(
+                    globalRelax = False,
+                    nrOfResiduesDownstream  = 1,
+                    nrOfResiduesUpstream    = 1,
+                    metalResidueName        = ["FE2"],
+                    cofactorResidueName     = ["AKG"],
+                    max_iter                = 3
+                )      """ 
+
 #/////////////////////////////////////////////////////////////
 """
   _____ _____ _____  ______ _      _____ _   _ ______ 
@@ -236,7 +249,7 @@ embeddingUrl = "http://0.0.0.0/embedding"
 ##################################################################################
 
 ligandNr = 1
-
+generation = 1
 start_time = datetime.now().replace(microsecond=0)
 print_running_reward = 0
 print_running_episodes = 0
@@ -248,13 +261,15 @@ i_episode = 0
 #logfile
 log_f = open(pj(residoraConfig["log_dir"], runID+".csv"), "w+")
 log_f.write('episode,timestep,reward\n')
+#logfile for each timestep
+log_t = open(pj(residoraConfig["log_dir"], runID + "_timestep.csv"), "w+")
+log_t.write('episode,timestep,reward,mutationResidue, oldAA, newAA\n')
 
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+
 
 while time_step <= residoraConfig["max_training_timesteps"]:
-    
-    generation = 1
 
     #Reset the state so that the agent reconsiders changes it has done and makes more effective mutations
     seq   = mutants.wildTypeAASeq
@@ -265,7 +280,7 @@ while time_step <= residoraConfig["max_training_timesteps"]:
     for t in range(1, residoraConfig["max_ep_len"]+1):
 
         print("-------------------------------")
-        print(f"Generation: {generation} \n episode: {t}")
+        print(f"Generation: {generation} \nepisode: {t}")
         print("-------------------------------")
         
         # select action with policy
@@ -318,42 +333,26 @@ while time_step <= residoraConfig["max_training_timesteps"]:
         state   = deepcopy(meanEmbedding)
         seq     = predictedSeq[idx]
 
-        mutID, mutationList = mutants.addMutant(
-                    generation          = generation,
-                    AASeq               = seq,
-                    embedding           = state,
-                    mutRes              = action,
-                    sourceStructure     = mutID, #mutID from last iteration 
-                    mutantStructurePath = structure3D_dir, #the mutation is happening here
-                    mutationList        = mutationList
-                    )
 
         #pprint(mutants.generationDict, indent = 4)
         #------------------------------------------------------------------------------------------
         # -------------  PYROPROLEX: pyRosetta-based protein relaxation -----------------
         #------------------------------------------------------------------------------------------
 
-        #TODO Maybe consider to use open source pymol for this https://pymolwiki.org/index.php/Optimize
-        #relaxes the mutants and stores the results in the mutantClass
-        #TODO add filepath of newly generated mutants 3D structure
-
+        mutID = mutants.addMutant(
+                    generation          = generation,
+                    AASeq               = seq,
+                    embedding           = state,
+                    mutRes              = action,
+                    sourceStructure     = mutID, #mutID from last iteration 
+                    mutantStructurePath = structure3D_dir, 
+                    mutationList        = mutationList,
+                    mutationApproach    = "pyrosetta" #the mutation is happening here
+                    )
+        
         #------------------------------------------------------------------------------------------
         # -------------  GAESP: GPU-accelerated Enzyme Substrate docking pipeline -----------------
         #------------------------------------------------------------------------------------------
-        #import pickle
-        #from src.main_gaesp import main_gaesp
-
-        #generation  = 1
-        #ligandNr    = 1
-
-        #saveConfigAndMutantsAsPickle(config, mutants)
-
-        #with open("/home/cewinharhar/GITHUB/reincatalyze/log/config.pkl", "rb") as cl:
-        #    config = pickle.load(cl)
-        #    config.num_modes = 3
-        #with open("/home/cewinharhar/GITHUB/reincatalyze/log/mutants.pkl", "rb") as ml:
-        #    mutants = pickle.load(ml)
-        #    mutID = list(mutants.generationDict[1].keys())[0]
 
         #the information is beeing stored in the mutantClass
         reward = main_gaesp(generation=generation, mutID = mutID, mutantClass_ = mutants, config=config, ligandNr = ligandNr)
@@ -364,6 +363,10 @@ while time_step <= residoraConfig["max_training_timesteps"]:
         
         time_step +=1
         current_ep_reward += reward
+
+        log_t.write(
+            f"{generation},{t},{reward},{mutationList[0][0]},{mutationList[0][1]},{mutationList[0][2]}"
+        )
 
         # update PPO agent
         if time_step % residoraConfig["update_timestep"] == 0:
@@ -420,6 +423,7 @@ while time_step <= residoraConfig["max_training_timesteps"]:
     generation += 1
 
 log_f.close()        
+log_t.close()        
 
 
 

@@ -1,8 +1,6 @@
 import sys
 import os
 import pymol.cmd as pycmd
-from Bio.PDB.Polypeptide import three_to_one, one_to_three
-
 from typing import List, Tuple
 
 def mutateProteinPymol(mutations : List[Tuple], amino_acid_sequence : str, source_structure_path : str, target_structure_path : str, whichChain : str= "A"):
@@ -14,6 +12,36 @@ def mutateProteinPymol(mutations : List[Tuple], amino_acid_sequence : str, sourc
     :param amino_acid_sequence: String containing the amino acid sequence of the protein
     :param structure_path: Path to the 3D protein structure file (pdb or pdbqt)
     """
+    #---- set map
+    class dotdict(dict):
+        """dot.notation access to dictionary attributes"""
+        __getattr__ = dict.get
+        __setattr__ = dict.__setitem__
+        __delattr__ = dict.__delitem__
+    aaMap = {
+        'A': 'ALA',  # Alanine
+        'C': 'CYS',  # Cysteine
+        'D': 'ASP',  # Aspartic Acid
+        'E': 'GLU',  # Glutamic Acid
+        'F': 'PHE',  # Phenylalanine
+        'G': 'GLY',  # Glycine
+        'H': 'HIS',  # Histidine
+        'I': 'ILE',  # Isoleucine
+        'K': 'LYS',  # Lysine
+        'L': 'LEU',  # Leucine
+        'M': 'MET',  # Methionine
+        'N': 'ASN',  # Asparagine
+        'P': 'PRO',  # Proline
+        'Q': 'GLN',  # Glutamine
+        'R': 'ARG',  # Arginine
+        'S': 'SER',  # Serine
+        'T': 'THR',  # Threonine
+        'V': 'VAL',  # Valine
+        'W': 'TRP',  # Tryptophan
+        'Y': 'TYR',  # Tyrosine
+    }
+    aaMap = dotdict(aaMap)    
+    #-----
 
     # Check if the structure file exists
     if not os.path.isfile(source_structure_path):
@@ -32,7 +60,7 @@ def mutateProteinPymol(mutations : List[Tuple], amino_acid_sequence : str, sourc
         # Mutate the residue
         pycmd.wizard("mutagenesis")
         pycmd.refresh_wizard()
-        pycmd.get_wizard().set_mode(one_to_three(target_aa))
+        pycmd.get_wizard().set_mode(aaMap[target_aa])
         pycmd.select("residue_to_mutate", f"resi {idx + 1 }") #+1 because starts with 1
         pycmd.get_wizard().do_select("residue_to_mutate")
         pycmd.get_wizard().apply()
