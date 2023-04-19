@@ -1,38 +1,11 @@
-
-#--------------------- pyrosetta relax
-class dotdict(dict):
-    """dot.notation access to dictionary attributes"""
-    __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-aaMap = {
-    'A': 'ALA',  # Alanine
-    'C': 'CYS',  # Cysteine
-    'D': 'ASP',  # Aspartic Acid
-    'E': 'GLU',  # Glutamic Acid
-    'F': 'PHE',  # Phenylalanine
-    'G': 'GLY',  # Glycine
-    'H': 'HIS',  # Histidine
-    'I': 'ILE',  # Isoleucine
-    'K': 'LYS',  # Lysine
-    'L': 'LEU',  # Leucine
-    'M': 'MET',  # Methionine
-    'N': 'ASN',  # Asparagine
-    'P': 'PRO',  # Proline
-    'Q': 'GLN',  # Glutamine
-    'R': 'ARG',  # Arginine
-    'S': 'SER',  # Serine
-    'T': 'THR',  # Threonine
-    'V': 'VAL',  # Valine
-    'W': 'TRP',  # Tryptophan
-    'Y': 'TYR',  # Tyrosine
-}
-aaMap = dotdict(aaMap)
-
 import pyrosetta
 from pyrosetta import pose_from_pdb, MoveMap, get_fa_scorefxn, get_score_function,  pose_from_file
 #from pyrosetta.toolbox import mutate_residue
 from typing import List, Tuple
+# Initialize PyRosetta in mute mode
+
+pyrosetta.init("-mute core.init core.pack.pack_rotamers core.pack.task core.io.pose_from_sfr.PoseFromSFRBuilder core.scoring.ScoreFunctionFactory core.import_pose.import_pose core.pack.interaction_graph.interaction_graph_factory core.pack.dunbrack.RotamerLibrary core.pack.rotamer_set.RotamerSet_ protocols.relax.FastRelax protocols.relax.RelaxScriptManager") #the string is to supress output
+
 
 def get_cofactor_indices_by_names(pose, cofactor_names):
     indices = []
@@ -44,14 +17,14 @@ def mutateProteinPyrosetta(mutations : List[Tuple], amino_acid_sequence : str, s
     """
     
     """
+    #init pyrosetta and mute all the unnecessary output
+
     #Sanity Check
     for idx, original_aa, target_aa in mutations:
         if amino_acid_sequence[idx] != original_aa:
             print(f"Warning: The amino acid at position {idx} is not {original_aa} as specified in the mutation list.")
-            raise Exception
-
-    # Initialize PyRosetta
-    pyrosetta.init()
+            print(f"AASeq: {amino_acid_sequence}")
+            #raise Exception
 
     #Scorefunction
     scorefxn = get_score_function()
@@ -77,9 +50,8 @@ def mutateProteinPyrosetta(mutations : List[Tuple], amino_acid_sequence : str, s
 
 
 def main_pyroprolex(source_structure_path : str, target_structure_path : str, max_iter : int = 100):    
-
-    # Initialize PyRosetta
-    pyrosetta.init()
+    """
+    """
     #metal detector and mover
     #metaldetector = SetupMetalsMover()
 
@@ -118,7 +90,7 @@ def main_pyroprolex(source_structure_path : str, target_structure_path : str, ma
     #        movemap.set_chi(cofaIndex, True) #MAKE ATOMS FLEXIBEL
 
     #relax.set_movemap(movemap)
-    relax.max_iter(relaxConfig["max_iter"])
+    relax.max_iter(max_iter)
     #relax.cartesian(True)
     relax.apply(pose)
 

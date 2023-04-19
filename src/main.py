@@ -35,7 +35,6 @@ from src.residoraHelpers.PPO import PPO
 from src.main_gaesp import main_gaesp
 #from src.main_residora import main_residora
 
-
 #external
 import pandas as pd
 import numpy as np
@@ -61,7 +60,7 @@ embedder = pipeline("feature-extraction", model="facebook/esm2_t6_8M_UR50D")
 
 #runID = datetime.datetime.now().strftime("%d-%b-%Y_%H:%M")
 runID = datetime.now().strftime("%d-%b-%Y")
-runID = "test"
+runID = "mainTest"
 
 working_dir = os.getcwd()  # working director containing pdbs
 
@@ -85,7 +84,7 @@ config = configObj(
     vina_gpu_cuda_path="/home/cewinharhar/GITHUB/Vina-GPU-CUDA/Vina-GPU",
     thread          = 8192,
     metal_containing= True,
-    num_modes       = 3, #number of poses that are beeing predicted    
+    num_modes       = 5, #number of poses that are beeing predicted    
     seed            = 13
 )
 #------------------------------------------------
@@ -139,7 +138,7 @@ mutants = mutantClass(
     ligand_df               = config.ligand_df
 )
 #relax the wildtype structure
-mutants.relaxWildType(max_iter = 100)
+mutants.relaxWildType(max_iter = 200)
 
 #------------------------------------------------
 #---------  RESIDORA CONFIG  --------------------
@@ -156,20 +155,20 @@ checkpoint_path = pj(model_dir, f"residora_{runID}.pth")
 print("save checkpoint path : " + checkpoint_path)
 
 #-------------------------
-max_ep_len = 1
+max_ep_len = 10
 #-------------------------
 residoraConfig = dict(
     log_dir         = log_dir_residora,
     state_dim       = 320,
     action_dim      = len(mutants.wildTypeAASeq),
     max_ep_len      = max_ep_len,                    # max timesteps in one episode
-    max_training_timesteps = int(1e5),   # break training loop if timeteps > max_training_timesteps
+    max_training_timesteps = int(1e2),   # break training loop if timeteps > max_training_timesteps
     print_freq      = max_ep_len * 4,     # print avg reward in the interval (in num timesteps)
     log_freq        = max_ep_len * 2,       # log avg reward in the interval (in num timesteps)
     save_model_freq = int(5e1),      # save model frequency (in num timesteps)
     action_std      = None,
     update_timestep = max_ep_len*4,     # update policy every n timesteps
-    done            = False,
+    done            = False,  #TODO remove you dont need
 
     K_epochs        = 50,               # update policy for K epochs
     eps_clip        = 0.2,              # clip parameter for PPO
@@ -216,6 +215,9 @@ print(ppo_agent.policy)
 
 #------------------------------------------------
 #---------  PYROPROLEX CONFIG  --------------------
+
+
+
 """ pyrosettaRelaxConfig = dict(
                     globalRelax = False,
                     nrOfResiduesDownstream  = 1,
@@ -256,14 +258,14 @@ print_running_episodes = 0
 log_running_reward = 0
 log_running_episodes = 0
 time_step = 0
-i_episode = 0
+#i_episode = 0
 
 #logfile
 log_f = open(pj(residoraConfig["log_dir"], runID+".csv"), "w+")
-log_f.write('episode,timestep,reward\n')
+log_f.write('generation,timestep,reward\n')
 #logfile for each timestep
 log_t = open(pj(residoraConfig["log_dir"], runID + "_timestep.csv"), "w+")
-log_t.write('episode,timestep,reward,mutationResidue, oldAA, newAA\n')
+log_t.write('generation,episode,reward,mutationResidue, oldAA, newAA\n')
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
@@ -277,10 +279,10 @@ while time_step <= residoraConfig["max_training_timesteps"]:
     current_ep_reward = 0
     mutID = 0 #to initialize the structure path for the wildtype
 
-    for t in range(1, residoraConfig["max_ep_len"]+1):
+    for episode in range(1, residoraConfig["max_ep_len"]+1):
 
         print("-------------------------------")
-        print(f"Generation: {generation} \nepisode: {t}")
+        print(f"Generation: {generation} \nEpisode: {episode}\nTime Step: {time_step}")
         print("-------------------------------")
         
         # select action with policy
@@ -361,12 +363,14 @@ while time_step <= residoraConfig["max_training_timesteps"]:
         ppo_agent.rewards.append(reward)
         ppo_agent.isTerminals.append(residoraConfig["done"]) #TODO make done depend on the enzyme stability
         
+        log_t.write(
+            f"{generation},{episode},{reward},{mutationList[0][0]},{mutationList[0][1]},{mutationList[0][2]}\n"
+        )
+
+        # ---------------------
         time_step +=1
         current_ep_reward += reward
-
-        log_t.write(
-            f"{generation},{t},{reward},{mutationList[0][0]},{mutationList[0][1]},{mutationList[0][2]}"
-        )
+        #--------------------------
 
         # update PPO agent
         if time_step % residoraConfig["update_timestep"] == 0:
@@ -379,7 +383,7 @@ while time_step <= residoraConfig["max_training_timesteps"]:
             log_avg_reward = log_running_reward / log_running_episodes
             log_avg_reward = round(log_avg_reward, 4)
 
-            log_f.write('{},{},{}\n'.format(i_episode, time_step, log_avg_reward))
+            log_f.write('{},{},{}\n'.format(generation, time_step, log_avg_reward))
             log_f.flush()
 
             log_running_reward = 0
@@ -393,7 +397,7 @@ while time_step <= residoraConfig["max_training_timesteps"]:
             print_avg_reward = round(print_avg_reward, 2)
 
             print("###########################################################################")
-            print("Episode : {} \t\t Timestep : {} \t\t Average Reward : {}".format(i_episode, time_step, print_avg_reward))
+            print("Generation : {} \t\t Timestep : {} \t\t Average Reward : {}".format(generation, time_step, print_avg_reward))
             print("###########################################################################")
 
             print_running_reward = 0
@@ -413,19 +417,49 @@ while time_step <= residoraConfig["max_training_timesteps"]:
         if residoraConfig["done"]:
             break
 
+
+
     print_running_reward += current_ep_reward
     print_running_episodes += 1
     
     log_running_reward += current_ep_reward
     log_running_episodes += 1
 
-    i_episode += 1
+    #i_episode += 1
     generation += 1
 
 log_f.close()        
 log_t.close()        
 
 
+
+if __name__ == "__main__":
+
+    #FèGE ALLES IN MAIN FUNCTION
+    import json
+    import argparse
+
+    def main(config_paths):
+        configs = []
+        for config_path in config_paths:
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+                configs.append(config)
+
+        for i, config in enumerate(configs):
+            learning_rate = config['learning_rate']
+            batch_size = config['batch_size']
+            epochs = config['epochs']
+
+            # Your deep learning code here
+            print(f'Running config {i+1}: learning_rate={learning_rate}, batch_size={batch_size}, epochs={epochs}')
+        
+    #ONLY THIS REMAINS FOR IF NAME MAIN
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, required=True, nargs='+', help='Paths to the JSON config files')
+    args = parser.parse_args()
+    
+    main(args.config)
 
 
 

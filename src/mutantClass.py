@@ -42,6 +42,8 @@ class mutantClass:
         file_name, file_extension = os.path.splitext(self.wildTypeStructurePath)
         # Add the string before the dot, separated by an underscore
         new_file_name = f"{file_name}_relaxed{file_extension}"     
+
+        print("======================================\nRelaxing WildType Structure, please be patient\n======================================")
         try:   
             main_pyroprolex(source_structure_path=self.wildTypeStructurePath,
                             target_structure_path=new_file_name,
@@ -67,6 +69,7 @@ class mutantClass:
             # add dict to generation X
             self.generationDict[generation] = {}
 
+        #TODO remove
         if not pyrosettaRelaxConfig:
             pyrosettaRelaxConfig = dict(
                 globalRelax = False,
