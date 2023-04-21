@@ -4,7 +4,7 @@ from pyrosetta import pose_from_pdb, MoveMap, get_fa_scorefxn, get_score_functio
 from typing import List, Tuple
 # Initialize PyRosetta in mute mode
 
-pyrosetta.init("-mute core.init core.pack.pack_rotamers core.pack.task core.io.pose_from_sfr.PoseFromSFRBuilder core.scoring.ScoreFunctionFactory core.import_pose.import_pose core.pack.interaction_graph.interaction_graph_factory core.pack.dunbrack.RotamerLibrary core.pack.rotamer_set.RotamerSet_ protocols.relax.FastRelax protocols.relax.RelaxScriptManager") #the string is to supress output
+pyrosetta.init("-mute core.init core.pack.pack_rotamers core.pack.task core.io.pose_from_sfr.PoseFromSFRBuilder core.scoring.ScoreFunctionFactory core.import_pose.import_pose core.pack.interaction_graph.interaction_graph_factory core.pack.dunbrack.RotamerLibrary core.pack.rotamer_set.RotamerSet_ core.scoring.elec.util protocols.relax.FastRelax protocols.relax.RelaxScriptManager basic.io.database core.scoring.P_AA core.scoring.etable") #the string is to supress output
 
 
 def get_cofactor_indices_by_names(pose, cofactor_names):
@@ -23,6 +23,7 @@ def mutateProteinPyrosetta(mutations : List[Tuple], amino_acid_sequence : str, s
     for idx, original_aa, target_aa in mutations:
         if amino_acid_sequence[idx] != original_aa:
             print(f"Warning: The amino acid at position {idx} is not {original_aa} as specified in the mutation list.")
+            print("Probable cause: Same residue was mutated before in the same generation.\nIgnore warning..")
             print(f"AASeq: {amino_acid_sequence}")
             #raise Exception
 
@@ -45,6 +46,9 @@ def mutateProteinPyrosetta(mutations : List[Tuple], amino_acid_sequence : str, s
                                      pack_radius=nrOfNeighboursToRelax, #how many AA down and upstream from mutation side should be relaxed
                                      pack_scorefxn=scorefxn)    
     
+    #update chain ID
+    #update_pose_chains_from_pdb_chains
+
     # Save the relaxed structure
     pose.dump_pdb(target_structure_path)
 
@@ -59,7 +63,7 @@ def main_pyroprolex(source_structure_path : str, target_structure_path : str, ma
     scorefxn = get_score_function()
 
     #IMPORTANT: must set weights for metalbinding to move metal
-    scorefxn.set_weight(pyrosetta.rosetta.core.scoring.ScoreType.metalbinding_constraint, 1.0) 
+    #scorefxn.set_weight(pyrosetta.rosetta.core.scoring.ScoreType.metalbinding_constraint, 1.0) 
 
     #----------------------------
     # Relax the structure 
@@ -107,15 +111,28 @@ if __name__ == "__main__":
         max_iter                = 100
     )    
     amino_acid_sequence = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
-    source_structure_path = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo.pdb"
+    source_structure_path = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo_relaxed.pdb"
 
-    target_structure_path_mutation = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/pyroprolex_mutation.pdb"
-    mutateProteinPyrosetta(mutations = [(224, "H", "A")], 
+    target_structure_path_mutation = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/pyroprolex_bugHunt.pdb"
+    mutateProteinPyrosetta(mutations = [(114, "L", "A")], 
                             amino_acid_sequence=amino_acid_sequence, 
                             source_structure_path=source_structure_path,
                             target_structure_path=target_structure_path_mutation,
                             nrOfNeighboursToRelax=2)
     
+    source_structure_path = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo_relaxed.pdb"
+    target_structure_path_mutation = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/pyroprolex_bugHunt.pdb"
+    mutateProteinPyrosetta(mutations = [(114, "L", "A")], 
+                            amino_acid_sequence=amino_acid_sequence, 
+                            source_structure_path=source_structure_path,
+                            target_structure_path=target_structure_path_mutation,
+                            nrOfNeighboursToRelax=2)
+    
+
+
+
+
+
     amino_acid_sequence_mut = list(amino_acid_sequence)
     amino_acid_sequence_mut[224] = "A"
     amino_acid_sequence_mut = "".join(amino_acid_sequence_mut)

@@ -6,6 +6,8 @@ import numpy as np
 import pymol.cmd as pycmd
 from os.path import join as pj
 
+from src.aaMap import aaMap
+
 from src.deepMutHelpers.mutateProteinPymol import mutateProteinPymol
 from src.deepMutHelpers.getMutationsList import getMutationsList
 
@@ -119,8 +121,11 @@ class mutantClass:
             AASeq           = AASeq, 
             embedding       = embedding, 
             mutRes          = mutRes, 
+            oldAA           = aaMap[mutationList[0][1]],
+            newAA           = aaMap[mutationList[0][2]],
             mutation        = mutationList[0][1]+str(mutationList[0][0])+mutationList[0][2],
             structurePath   = mutantStructurePath, 
+            structurePath4Vina="", 
             dockingResults  = self.dockingResultsEmpty
             )
         

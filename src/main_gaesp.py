@@ -2,44 +2,14 @@
 #                   DEPENDENCIES
 ########################################################
 
-import datetime
-import glob
-import json
-import multiprocessing
-import os
-import pickle
-# pdmol = PandasMol2()
-import shutil
 import subprocess
-import time
 from os.path import join as pj
-from typing import List, Tuple
-
-import matplotlib.pyplot as plt
-import numpy
-import numpy as np
-import pandas as pd
 
 import pymol
 from pymol import cmd as pycmd
 
-
-""" from biopandas.mol2 import PandasMol2, split_multimol2
-from biopandas.pdb import PandasPdb
-from natsort import natsorted """
-
 # We suppres stdout from invalid smiles and validations
-from rdkit import Chem, DataStructs, rdBase
-from rdkit.Chem import QED, AllChem, Descriptors, rdMolDescriptors
-from rdkit.Chem.Draw import IPythonConsole
-# -------------------------------------------------------
-# DOCKING
-# -------------------------------------------------------
-from rdkit.Chem.PandasTools import LoadSDF
-from tqdm.auto import tqdm
-
-Chem.PandasTools.RenderImagesInAllDataFrames(images=True)
-
+from rdkit import Chem
 # -------------------------------------------------------
 # src functions
 # -------------------------------------------------------
@@ -58,16 +28,21 @@ from src.gaespHelpers.calculateDistanceFromTargetCarbonToFe import calculateDist
 #                   Preparation
 ########################################################
 
-# ------------------------------------------------
-#               CONFIGURATION
-# ------------------------------------------------
-
-# ------------------------------------------------
-
-def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config : configObj, ligandNr : int, distanceTreshold : float = 10.0, punishment : float = -20.0 ):
-    """ Make docking predictionand store results in the mutantClass
+def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config : configObj, ligandNr : int, dockingTool : str = "vinagpu", flexibelDocking : bool = True, distanceTreshold : float = 10.0, punishment : float = -20.0, boxSize : int = 20):
+    """
+    Dock a ligand with a protein structure specified by its generation and mutation ID, and store the docking results in the mutantClass object.
     
-    
+    Args:
+        generation (int): The generation number of the protein structure.
+        mutID (str): The mutation ID of the protein structure.
+        mutantClass_ (mutantClass): A mutantClass object to store docking results.
+        config (configObj): A configObj object containing configuration information.
+        ligandNr (int): The index of the ligand to be docked.
+        distanceTreshold (float, optional): The threshold distance between the target carbon and the iron atom. Default is 10.0.
+        punishment (float, optional): The punishment value assigned to the docking result if the distance between the target carbon and the iron atom is greater than the distance threshold. Default is -20.0.
+
+    Returns:
+        float: The reward value calculated based on the docking result, considering the distance to the target carbon and the docking affinity.
     """
 
     #---------------------------------------------------------
@@ -79,16 +54,16 @@ def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config
     #for mutID in mutantClass_.generationDict[generation].keys():
 
     #Extract information before docking 
-    receptor = mutantClass_.generationDict[generation][mutID]["structurePath"]
+    receptor = mutantClass_.generationDict[generation][mutID]["structurePath4Vina"]
     #TODO check if outPath is correct in 3D_pred, shouldnt it be in dockignpred?
-    outPath = pj(config.data_dir, "processed/3D_pred", config.runID) 
     cx, cy, cz = mutantClass_.generationDict[generation][mutID]["centerCoord"]
-    sx =  sy = sz = 20
+    sx =  sy = sz = boxSize
 
     tmp = config.ligand_df.ligand_name[ligandNr]
     #iterate = [pj(config.ligand_files, f"ligand_{str(nr+1)}.pdbqt") for nr in range(len(config.ligand_df))]
     ligand4Cmd = pj(config.ligand_files, f"ligand_{tmp}.pdbqt")
-    #--------------------------------------------------------
+    #---------
+    # -----------------------------------------------
     
     #print(f"Preparing for Docking: \n (Benjamin... time to wake up)")
 
@@ -100,11 +75,34 @@ def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config
     #define output path for ligand docking results
     ligandOutPath = pj(config.data_dir, "processed", "docking_pred", config.runID, f"{mutID}_ligand_{str(ligandNr+1)}.{config.output_formate}")
 
-    #you could add --exhaustiveness 32 for more precise solution
-    vina_docking=f"{config.vina_gpu_cuda_path} --thread {config.thread} --receptor {receptor} --ligand {ligand4Cmd} \
-                    --seed {config.seed} --center_x {cx} --center_y {cy} --center_z {cz}  \
-                    --size_x {sx} --size_y {sy} --size_z {sz} \
-                    --out {ligandOutPath} --num_modes {config.num_modes} --exhaustiveness 1"
+    if dockingTool.lower() == "vinagpu":
+        #you could add --exhaustiveness 32 for more precise solution
+        vina_docking=f"{config.vina_gpu_cuda_path} --thread {config.thread} --receptor {receptor} --ligand {ligand4Cmd} \
+                        --seed {config.seed} --center_x {cx} --center_y {cy} --center_z {cz}  \
+                        --size_x {sx} --size_y {sy} --size_z {sz} \
+                        --out {ligandOutPath} --num_modes {config.num_modes} --exhaustiveness {config.exhaustiveness}"
+    elif dockingTool.lower() == "vina":
+        if flexibelDocking: #https://autodock-vina.readthedocs.io/en/latest/docking_flexible.html
+            rigTmpPath = pj(config.data_dir, "tmp/rig.pdbqt")
+            flexTmpPath = pj(config.data_dir, "tmp/flex.pdbqt")
+            #you need a code for the residue like TRP114 or multiple like TRP114_HIS225_ALA1, get info from prepare_flexreceptor.py -h
+            flexibelResidue = mutantClass_.generationDict[generation][mutID]["newAA"]+str(mutantClass_.generationDict[generation][mutID]["mutRes"] + 1) #plus 1 because flexreceptor starts with 1
+            flexCommand = f"pythonsh {config.autoDockScript_path}/prepare_flexreceptor.py -r {receptor} -s {flexibelResidue} -g {rigTmpPath} -x {flexTmpPath}"
+            #run the division between rigit structure and flexible residue
+            ps = subprocess.Popen([flexCommand],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)  
+            try:
+                stdout,stderr = ps.communicate() 
+            except Exception as err:
+                print(f"Error at flexible docking > prepare_flexreceptor")
+            #Now comes the actual docking
+            vina_docking=f"{config.vina_path} --receptor {rigTmpPath} --flex {flexTmpPath} --ligand {ligand4Cmd} \
+                        --seed {config.seed} --center_x {cx} --center_y {cy} --center_z {cz}  \
+                        --size_x {sx} --size_y {sy} --size_z {sz} \
+                        --out {ligandOutPath} --num_modes {config.num_modes} --exhaustiveness {config.exhaustiveness}"
+        else:
+            print("Use GPU you mustard face")
+            raise Exception
+
     
     #os.system(vina_docking)
     #run command
@@ -116,7 +114,10 @@ def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config
         vinaOutput   = extractTableFromVinaOutput(stdout.decode())
         nrOfVinaPred = len(vinaOutput)
     except Exception as err:
-        print(err)
+        print(f"Error in main_gaesp > extractTableFromVinaOutput", err)
+        print(f"stdout:\n{stdout}\n\n\nstderr:\n{stderr}")
+
+        return punishment 
 
     try:
         #TODO sometimes there are less predictions than expected, take this into considereation
@@ -126,7 +127,9 @@ def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config
         stdout, stderr = ps.communicate()
         #print("obabel output:", stdout)
     except Exception as err:
-        print(err)
+        print(f"Error in main_gaesp > obabel", err)
+        print(f"stdout: {stdout}\nstderr: {stderr}")
+
 
     targetCarbonID = getTargetCarbonIDFromMol2File(ligandOutPath)
 

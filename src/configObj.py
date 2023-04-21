@@ -7,8 +7,10 @@ class configObj:
         working_dir,
         data_dir,
         log_dir,
+        vina_path = "",
         vina_gpu_path = "",
         vina_gpu_cuda_path = "",
+        autoDockScript_path = "",
         thread = 8192,
         #mol2_files,
         ligand_files = "",
@@ -29,14 +31,18 @@ class configObj:
         exhaustiveness=3,
         # How different do the states have to be to be "different"
         energy_range=3,
+        #boxSize
+        boxSize=20,
         seed = 13
     ):
         self.runID = runID
         self.working_dir = working_dir
         self.data_dir = data_dir
         self.log_dir = log_dir
+        self.vina_path = vina_path
         self.vina_gpu_path = vina_gpu_path
         self.vina_gpu_cuda_path = vina_gpu_cuda_path
+        self.autoDockScript_path = autoDockScript_path
         self.thread = thread
         self.ligand_files = ligand_files
         self.slopes_file=slopes_file
@@ -51,8 +57,10 @@ class configObj:
         self.output_formate=output_formate
         self.num_modes=num_modes
         self.seed = seed
-        self.exhaustiveness=3
-        self.energy_range=3
+        self.exhaustiveness=exhaustiveness
+        self.boxSize = boxSize
+        self.energy_range=energy_range
+
 
         #create paths if not already exist
         for pa in ["3D_pred", "docking_pred"]:

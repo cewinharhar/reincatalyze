@@ -45,23 +45,27 @@ from transformers import pipeline #if problems with libssl.10 -> conda update to
 
 
 def main():
+    """
+    
+    """
     #CLASSIFIER
     classifier = pipeline("fill-mask", model="facebook/esm2_t6_8M_UR50D")
     embedder = pipeline("feature-extraction", model="facebook/esm2_t6_8M_UR50D")
 
 
     ################################################################################
-    """ _____ ____  _   _ ________________ 
-    / ____/ __ \| \ | |  ____|_   _/ ____|
-    | |   | |  | |  \| | |__    | || |  __ 
-    | |   | |  | | . ` |  __|   | || | |_ |
-    | |___| |__| | |\  | |     _| || |__| |
-    \_____\____/|_| \_|_|    |_____\_____|                                                                            
+    """  _____ ____  _   _ ________________ 
+        / ____/ __ \| \ | |  ____|_   _/ ____|
+        | |   | |  | |  \| | |__    | || |  __ 
+        | |   | |  | | . ` |  __|   | || | |_ |
+        | |___| |__| | |\  | |     _| || |__| |
+        \_____\____/|_| \_|_|    |_____\_____|                                                                            
     """
     ################################################################################
 
     #runID = datetime.datetime.now().strftime("%d-%b-%Y_%H:%M")
     runID = datetime.now().strftime("%d-%b-%Y")
+    runID = datetime.now().strftime("%Y_%b_%d-%H_%M")
     #runID = "mainTest"
 
     working_dir = os.getcwd()  # working director containing pdbs
@@ -84,10 +88,14 @@ def main():
         NADP_cofactor   = False,
         gpu_vina        = True,
         vina_gpu_cuda_path="/home/cewinharhar/GITHUB/Vina-GPU-CUDA/Vina-GPU",
-        thread          = 8192,
+        vina_path       = "/home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64",
+        autoDockScript_path="/home/cewinharhar/GITHUB/AutoDock-Vina/example/autodock_scripts",
+        thread          = 8192, #this is max
         metal_containing= True,
         num_modes       = 5, #number of poses that are beeing predicted    
-        seed            = 13
+        boxSize         = 20,        
+        seed            = 13,
+        exhaustiveness  = 32
     )
     #------------------------------------------------
     #------------  LIGANDS  -------------------------
@@ -124,7 +132,7 @@ def main():
     #------------------------------------------------
     #------------  GAESP CONFIG  ------------------------
 
-    wildTypeStructurePath   = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo.cif"
+    wildTypeStructurePath   = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo_relaxed.pdb"
     aKGD31                  = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
 
     #save the wildtype embedding, it is used multiple times   
@@ -140,7 +148,7 @@ def main():
         ligand_df               = config.ligand_df
     )
     #relax the wildtype structure
-    mutants.relaxWildType(max_iter = 200)
+    #mutants.relaxWildType(max_iter = 200)
 
     #------------------------------------------------
     #---------  RESIDORA CONFIG  --------------------
@@ -164,7 +172,7 @@ def main():
         state_dim       = 320,
         action_dim      = len(mutants.wildTypeAASeq),
         max_ep_len      = max_ep_len,                    # max timesteps in one episode
-        max_training_timesteps = int(1e4),   # break training loop if timeteps > max_training_timesteps
+        max_training_timesteps = int(5e3),   # break training loop if timeteps > max_training_timesteps
         print_freq      = max_ep_len * 4,     # print avg reward in the interval (in num timesteps)
         log_freq        = max_ep_len * 2,       # log avg reward in the interval (in num timesteps)
         save_model_freq = int(5e1),      # save model frequency (in num timesteps)
@@ -267,7 +275,7 @@ def main():
     log_f.write('generation,timestep,reward\n')
     #logfile for each timestep
     log_t = open(pj(residoraConfig["log_dir"], runID + "_timestep.csv"), "w+")
-    log_t.write('generation,episode,reward,mutationResidue, oldAA, newAA\n')
+    log_t.write('generation,episode,reward,mutationResidue,oldAA,newAA\n')
 
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
@@ -319,11 +327,14 @@ def main():
             #update state
                 #calculate mean embedding
 
+            #TODO decide wether to always choose first option
             #iterate over the predicted AA's (first ones have higher score), if the same as wildtype, skip
             for idx, AA in enumerate(predictedAA):
                 if AA != seq[action]:
                     mutAA = AA
-                    break            
+                    break    
+            #idx     = 0
+            #mutAA   = predictedAA[idx]   
 
             meanEmbedding = esm2_getEmbedding(predictedSeq[idx], embedder=embedder) 
             #---------------------------------------------------------------------------------------------------
@@ -354,12 +365,21 @@ def main():
                         mutationApproach    = "pyrosetta" #the mutation is happening here
                         )
             
+            print(f"MutID: {mutID}")
+            print("-------------------------------")
+            
             #------------------------------------------------------------------------------------------
             # -------------  GAESP: GPU-accelerated Enzyme Substrate docking pipeline -----------------
             #------------------------------------------------------------------------------------------
 
             #the information is beeing stored in the mutantClass
-            reward = main_gaesp(generation=generation, mutID = mutID, mutantClass_ = mutants, config=config, ligandNr = ligandNr)
+            reward = main_gaesp(generation  = generation, 
+                                mutID       = mutID, 
+                                mutantClass_= mutants, 
+                                config      = config, 
+                                ligandNr    = ligandNr, 
+                                boxSize     = config.boxSize,
+                                dockingTool = "vina")
 
             #-----------------------
             ppo_agent.rewards.append(reward)
