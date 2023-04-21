@@ -22,11 +22,13 @@ def prepareLigand4Vina(smiles : List, subName : List, config : configObj):
         protonated_lig = Chem.AddHs(lig)
         Chem.AllChem.EmbedMolecule(protonated_lig)
 
+        tmp = subName[idx].replace(" ", "_")
+        Chem.MolToMolFile(protonated_lig, filename = f"{config.ligand_files}/ligand_{tmp}.mol")
+
         meeko_prep = MoleculePreparation()
         meeko_prep.prepare(protonated_lig)
         lig_pdbqt = meeko_prep.write_pdbqt_string()
         
-        tmp = subName[idx].replace(" ", "_")
         
         with open(f"{config.ligand_files}/ligand_{tmp}.pdbqt", "w") as w:
             w.write(lig_pdbqt)  

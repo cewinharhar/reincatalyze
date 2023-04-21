@@ -19,6 +19,7 @@ from src.configObj import configObj
 from src.mutantClass import mutantClass
 
 from src.gaespHelpers.logRun import logRun
+from src.gaespHelpers.splitPDBQTFile import splitPDBQTFile
 from src.gaespHelpers.prepareReceptors import prepareReceptors
 from src.gaespHelpers.extractTableFromVinaOutput import extractTableFromVinaOutput
 from src.gaespHelpers.getTargetCarbonIDFromMol2File import getTargetCarbonIDFromMol2File
@@ -112,6 +113,8 @@ def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config
     try:
         #extract results from vina docking
         vinaOutput   = extractTableFromVinaOutput(stdout.decode())
+        print(stdout.decode())
+        print(f" \n Docking successfull!! \n \n {vinaOutput}")        
         nrOfVinaPred = len(vinaOutput)
     except Exception as err:
         print(f"Error in main_gaesp > extractTableFromVinaOutput", err)
@@ -119,32 +122,35 @@ def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config
 
         return punishment 
 
-    try:
-        #TODO sometimes there are less predictions than expected, take this into considereation
-        #split the vina output pdbqt file into N single files each with one pose (done with the -m flag)
-        splitDockRes = f"""obabel {ligandOutPath} -O {ligandOutPath.replace(".pdbqt", "_.mol2")} -m"""
-        ps = subprocess.Popen([splitDockRes],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
-        stdout, stderr = ps.communicate()
-        #print("obabel output:", stdout)
-    except Exception as err:
-        print(f"Error in main_gaesp > obabel", err)
-        print(f"stdout: {stdout}\nstderr: {stderr}")
+    if dockingTool == "vinagpu":
+        try:
+            #split the vina output pdbqt file into N single files each with one pose (done with the -m flag)
+            splitDockRes = f"""obabel {ligandOutPath} -O {ligandOutPath.replace(".pdbqt", "_.mol2")} -m"""
+            ps = subprocess.Popen([splitDockRes],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+            stdout, stderr = ps.communicate()
+            #print("obabel output:", stdout)
+        except Exception as err:
+            print(f"Error in main_gaesp > obabel", err)
+            print(f"stdout: {stdout}\nstderr: {stderr}")
+
+    elif dockingTool == "vina":
+    #split the files into individual mol2 files
+        nrOfVinaPred = splitPDBQTFile(pdbqt_file=ligandOutPath)
 
 
-    targetCarbonID = getTargetCarbonIDFromMol2File(ligandOutPath)
+    #targetCarbonID = getTargetCarbonIDFromMol2File(ligandOutPath)
 
     distances = calculateDistanceFromTargetCarbonToFe(
         receptorPath    = receptor, 
         ligandPath      = ligandOutPath, 
         num_modes       = nrOfVinaPred, #instead of config.num_modes because sometimes there are fewer preds than given
-        targetCarbonID  = targetCarbonID,
+        targetCarbonID  = config.ligand_df.carbonID[ligandNr],
         resname         = "UNL",
         metalType       = "FE"
         )
 
     vinaOutput["distTargetCarbonToFE"] = distances
 
-    print(f" \n Docking successfull!! \n \n {vinaOutput}")
     print(f"Number of results: {nrOfVinaPred}")    
 
     #save results in corresponding mutantclass subdict

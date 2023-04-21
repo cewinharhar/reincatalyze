@@ -2,7 +2,7 @@ import re
 import pandas as pd
 from pandas import DataFrame
 
-def extract_table(input_string):
+def extractTableFromVinaOutput(input_string):
     # Regular expression to match the lines with mode and affinity
     pattern = r"^\s*(\d+)\s+(-?\d+\.\d+)"
     

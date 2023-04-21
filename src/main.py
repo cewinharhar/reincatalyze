@@ -64,7 +64,7 @@ def main():
     ################################################################################
 
     #runID = datetime.datetime.now().strftime("%d-%b-%Y_%H:%M")
-    runID = datetime.now().strftime("%d-%b-%Y")
+    #runID = datetime.now().strftime("%d-%b-%Y")
     runID = datetime.now().strftime("%Y_%b_%d-%H_%M")
     #runID = "mainTest"
 
@@ -116,7 +116,7 @@ def main():
     #---------------------------------------------
     #PREPARE THEM LIGANDS
     config = prepareLigand4Vina(smiles = subSmiles, subName = subName, config = config)
-    print("Ligands are stored in: {config.ligand_files}")
+    print(f"Ligands are stored in: {config.ligand_files}")
     #---------------------------------------------
 
     #Create dataframe and store in config
@@ -379,7 +379,7 @@ def main():
                                 config      = config, 
                                 ligandNr    = ligandNr, 
                                 boxSize     = config.boxSize,
-                                dockingTool = "vina")
+                                dockingTool = "vinagpu") #vina or vinagpu
 
             #-----------------------
             ppo_agent.rewards.append(reward)
