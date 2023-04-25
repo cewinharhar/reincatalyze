@@ -17,4 +17,7 @@ def extractTableFromVinaOutput(input_string):
     # Create a pandas DataFrame from the extracted data
     table = pd.DataFrame(data, columns=['mode', 'affinity'])
 
+    if len(table) == 0:
+        raise RuntimeError
+
     return table

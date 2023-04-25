@@ -1,0 +1,38 @@
+{
+    "config1": {
+        "globalConfig": {
+            "runIDExtension"        : "exhaustivenessTest",
+            "transformerName"       : "facebook/esm2_t6_8M_UR50D",
+            "vina_gpu_cuda_path"    : "/home/cewinharhar/GITHUB/Vina-GPU-CUDA/Vina-GPU",
+            "vina_path"             : "/home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64",
+            "autoDockScript_path": "/home/cewinharhar/GITHUB/AutoDock-Vina/example/autodock_scripts",
+            "thread": 8192,
+            "metal_containing": true,
+            "num_modes": 5,
+            "boxSize": 20,
+            "seed": 42,
+            "exhaustiveness": 32
+        },
+        "gaespConfig": {
+            "wildTypeAASeq": "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA",
+            "wildTypeStructurePath": "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo_relaxed.pdb"
+        },
+        "residoraConfig": {
+            "max_ep_len": 5, 
+            "max_training_timesteps": 50,
+            "save_model_freq": 25,
+
+            "K_epochs": 50,
+            "eps_clip": 0.2,
+            "learning_rate": 0.0001,
+            "batch_size": 128,
+            "optimizer": "rmsprop",
+            "loss": "binary_crossentropy",
+            "metrics": ["precision", "recall"]
+        }
+    },
+
+
+    "config2": {}
+    
+    }

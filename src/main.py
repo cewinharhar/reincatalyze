@@ -5,6 +5,8 @@ from datetime import datetime
 import requests
 from pprint import pprint
 from copy import deepcopy
+from typing import List, Tuple
+import yaml
 
 import torch
 
@@ -30,6 +32,8 @@ from src.residoraHelpers.convNet import convNet
 from src.residoraHelpers.ActorCritic import ActorCritic
 from src.residoraHelpers.PPO import PPO
 
+from src.main_postProcessing import plotRewardByGeneration, plotMutationBehaviour, mutation_summary
+
 #from src.main_deepMut import main_deepMut
 #from src.main_pyroprolex import main_pyroprolex
 from src.main_gaesp import main_gaesp
@@ -44,15 +48,50 @@ from transformers import pipeline #if problems with libssl.10 -> conda update to
 # Main pipe for the whole pipeline
 
 
-def main():
+def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variables
+                  #globalConfig
+                  runIDExtension : str, 
+                  transformerName: str = "facebook/esm2_t6_8M_UR50D", 
+                  gpu_vina: str = True,
+                  vina_gpu_cuda_path: str = "/home/cewinharhar/GITHUB/Vina-GPU-CUDA/Vina-GPU", 
+                  vina_path: str = "/home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64", 
+                  autoDockScript_path: str = "/home/cewinharhar/GITHUB/AutoDock-Vina/example/autodock_scripts", 
+                  metal_containing: bool = True, 
+                  ligandNr: int = 1,
+                  #gaespConfig
+                  wildTypeAASeq: str = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA", 
+                  wildTypeStructurePath: str = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo_relaxed.pdb",
+                  thread: int = 8192, 
+                  num_modes: int = 5, 
+                  boxSize:int = 20, 
+                  gaespSeed: int = 42, 
+                  exhaustiveness: int = 32,
+                  dockingTool: str = "vinagpu",
+                  #pyroprolexConfig
+                  mutationApproach: str = "pyrosetta",
+                  #residoraConfig
+                  max_ep_len: int = 5, 
+                  max_training_timesteps: int = 50, 
+                  save_model_freq: int = 25, 
+                  K_epochs: int = 50, 
+                  gamma: float = 0.99, 
+                  eps_clip: float = 0.2, 
+                  lr_actor: float = 0.0003, 
+                  lr_critic: float = 0.001, 
+                  residoraSeed: int = 13,
+
+                  nrNeuronsInHiddenLayers: List = [256], 
+                  activationFunction: str = "tanh", 
+                  useCNN: bool = False, 
+                  stride: int = 4, 
+                  kernel_size: int = 6,  
+                  out_channel: int = 2, 
+                  dropOutProb: float = 0.01, 
+                  residoraDevice: str = "cpu"):
     """
     
     """
-    #CLASSIFIER
-    classifier = pipeline("fill-mask", model="facebook/esm2_t6_8M_UR50D")
-    embedder = pipeline("feature-extraction", model="facebook/esm2_t6_8M_UR50D")
-
-
+    
     ################################################################################
     """  _____ ____  _   _ ________________ 
         / ____/ __ \| \ | |  ____|_   _/ ____|
@@ -63,9 +102,8 @@ def main():
     """
     ################################################################################
 
-    #runID = datetime.datetime.now().strftime("%d-%b-%Y_%H:%M")
-    #runID = datetime.now().strftime("%d-%b-%Y")
-    runID = datetime.now().strftime("%Y_%b_%d-%H_%M")
+    if not runID:
+        runID = datetime.now().strftime("%Y_%b_%d-%H_%M")
     #runID = "mainTest"
 
     working_dir = os.getcwd()  # working director containing pdbs
@@ -73,8 +111,8 @@ def main():
     data_dir = pj(working_dir, "data/")
     log_dir_docking = pj(working_dir, "log/docking")
     model_dir = pj(working_dir, "models/residora")
-
     structure3D_dir = pj(data_dir, "processed", "3D_pred", runID)
+    final_dir = pj(data_dir, "final", runID)
 
     #------------------------------------------------
     config = configObj(
@@ -86,16 +124,16 @@ def main():
         data_dir        = data_dir,
         log_dir         = log_dir_docking,
         NADP_cofactor   = False,
-        gpu_vina        = True,
-        vina_gpu_cuda_path="/home/cewinharhar/GITHUB/Vina-GPU-CUDA/Vina-GPU",
-        vina_path       = "/home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64",
-        autoDockScript_path="/home/cewinharhar/GITHUB/AutoDock-Vina/example/autodock_scripts",
-        thread          = 8192, #this is max
-        metal_containing= True,
-        num_modes       = 5, #number of poses that are beeing predicted    
-        boxSize         = 20,        
-        seed            = 13,
-        exhaustiveness  = 32
+        gpu_vina        = gpu_vina,
+        vina_gpu_cuda_path=vina_gpu_cuda_path,
+        vina_path       = vina_path,
+        autoDockScript_path=autoDockScript_path,
+        metal_containing= metal_containing,
+        thread          = thread, #this is max
+        num_modes       = num_modes, #number of poses that are beeing predicted    
+        boxSize         = boxSize,        
+        seed            = gaespSeed,
+        exhaustiveness  = exhaustiveness
     )
     #------------------------------------------------
     #------------  LIGANDS  -------------------------
@@ -130,24 +168,26 @@ def main():
     print(config.ligand_df) 
 
     #------------------------------------------------
+    #------------  DEEPMUT CONFIG  ------------------------
+    #
+    classifier  = pipeline("fill-mask", model=transformerName)
+    embedder    = pipeline("feature-extraction", model=transformerName, top_k = 5)    
+
+    #------------------------------------------------
     #------------  GAESP CONFIG  ------------------------
 
-    wildTypeStructurePath   = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo_relaxed.pdb"
-    aKGD31                  = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
-
     #save the wildtype embedding, it is used multiple times   
-    aKGD31_embedding   = esm2_getEmbedding(sequence = aKGD31, embedder=embedder, returnList = True)
-    #aKGD31_embedding = embeddingRequest(aKGD31, returnNpArray=True)
+    wildType_embedding   = esm2_getEmbedding(sequence = wildTypeAASeq, embedder=embedder, returnList = True)
 
     #Initialize the mutantClass
     mutants = mutantClass(
         runID                   = runID,
-        wildTypeAASeq           = aKGD31,
-        wildTypeAAEmbedding     = aKGD31_embedding,
+        wildTypeAASeq           = wildTypeAASeq,
+        wildTypeAAEmbedding     = wildType_embedding,
         wildTypeStructurePath   = wildTypeStructurePath,
         ligand_df               = config.ligand_df
     )
-    #relax the wildtype structure
+    #relax the wildtype structure #TODO reactivate, change wildTypeStructurePath to real structure
     #mutants.relaxWildType(max_iter = 200)
 
     #------------------------------------------------
@@ -165,36 +205,33 @@ def main():
     print("save checkpoint path : " + checkpoint_path)
 
     #-------------------------
-    max_ep_len = 10
-    #-------------------------
     residoraConfig = dict(
         log_dir         = log_dir_residora,
-        state_dim       = 320,
+        state_dim       = np.array(embedder("")).shape[2], #the output shape of the embedder
         action_dim      = len(mutants.wildTypeAASeq),
         max_ep_len      = max_ep_len,                    # max timesteps in one episode
-        max_training_timesteps = int(5e3),   # break training loop if timeteps > max_training_timesteps
+        max_training_timesteps = max_training_timesteps,   # break training loop if timeteps > max_training_timesteps
         print_freq      = max_ep_len * 4,     # print avg reward in the interval (in num timesteps)
         log_freq        = max_ep_len * 2,       # log avg reward in the interval (in num timesteps)
-        save_model_freq = int(5e1),      # save model frequency (in num timesteps)
-        action_std      = None,
+        save_model_freq = save_model_freq,      # save model frequency (in num timesteps)
         update_timestep = max_ep_len*4,     # update policy every n timesteps
         done            = False,  #TODO remove you dont need
 
-        K_epochs        = 50,               # update policy for K epochs
-        eps_clip        = 0.2,              # clip parameter for PPO
-        gamma           = 0.99,                # discount factor
-        lr_actor        = 0.0003,       # learning rate for actor network
-        lr_critic       = 0.001,       # learning rate for critic network
-        random_seed     = 13,         # set random seed if required (0 = no random seed)
+        K_epochs        = K_epochs,               # update policy for K epochs
+        eps_clip        = eps_clip,              # clip parameter for PPO
+        gamma           = gamma,                # discount factor
+        lr_actor        = lr_actor,       # learning rate for actor network
+        lr_critic       = lr_critic,       # learning rate for critic network
+        random_seed     = residoraSeed,         # set random seed if required (0 = no random seed)
 
-        nrNeuronsInHiddenLayers = [256],
-        activationFunction = "tanh",
-        useCNN          = False,
-        stride          = 4,
-        kernel_size     = 6, #IF YOU CHANGE ABOVE 6 YOU LOOSE 2 DIMs
-        out_channel     = 2,
-        dropOutProb     = 0.01,
-        device          = "cpu"
+        nrNeuronsInHiddenLayers = nrNeuronsInHiddenLayers,
+        activationFunction = activationFunction,
+        useCNN          = useCNN,
+        stride          = stride,
+        kernel_size     = kernel_size, #IF YOU CHANGE ABOVE 6 YOU LOOSE 2 DIMs
+        out_channel     = out_channel,
+        dropOutProb     = dropOutProb,
+        device          = residoraDevice
     )
 
     #INIT actorCritic and PPO
@@ -226,17 +263,6 @@ def main():
     #------------------------------------------------
     #---------  PYROPROLEX CONFIG  --------------------
 
-
-
-    """ pyrosettaRelaxConfig = dict(
-                        globalRelax = False,
-                        nrOfResiduesDownstream  = 1,
-                        nrOfResiduesUpstream    = 1,
-                        metalResidueName        = ["FE2"],
-                        cofactorResidueName     = ["AKG"],
-                        max_iter                = 3
-                    )      """ 
-
     #/////////////////////////////////////////////////////////////
     """
     _____ _____ _____  ______ _      _____ _   _ ______ 
@@ -249,18 +275,14 @@ def main():
     """
     #/////////////////////////////////////////////////////////////
 
-
-    #TODO make this iteratevly and input is json
-
     #nrOfSequences = 5
-    filePath = "/home/cewinharhar/GITHUB/gaesp/data/raw/aKGD_FE_oxo_obable.pdb"
-    deepMutUrl = "http://0.0.0.0/deepMut"
-    embeddingUrl = "http://0.0.0.0/embedding"
+    #filePath = "/home/cewinharhar/GITHUB/gaesp/data/raw/aKGD_FE_oxo_obable.pdb"
+    #deepMutUrl = "http://0.0.0.0/deepMut"
+    #embeddingUrl = "http://0.0.0.0/embedding"
 
     ##################################################################################
-    ##################################################################################
 
-    ligandNr = 1
+    ligandNr = ligandNr
     generation = 1
     start_time = datetime.now().replace(microsecond=0)
     print_running_reward = 0
@@ -268,7 +290,6 @@ def main():
     log_running_reward = 0
     log_running_episodes = 0
     time_step = 0
-    #i_episode = 0
 
     #logfile
     log_f = open(pj(residoraConfig["log_dir"], runID+".csv"), "w+")
@@ -277,9 +298,7 @@ def main():
     log_t = open(pj(residoraConfig["log_dir"], runID + "_timestep.csv"), "w+")
     log_t.write('generation,episode,reward,mutationResidue,oldAA,newAA\n')
 
-
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
-
 
     while time_step <= residoraConfig["max_training_timesteps"]:
 
@@ -318,14 +337,6 @@ def main():
 
             #---------------------------------------
             #------------ embeddings ---------------
-            #deepMutOutput = ["MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"]
-            #embedding = embeddingRequest(
-            #            seq = meanEmbedding,
-            #            returnNpArray=False,
-            #            embeddingUrl=embeddingUrl
-            #        )
-            #update state
-                #calculate mean embedding
 
             #TODO decide wether to always choose first option
             #iterate over the predicted AA's (first ones have higher score), if the same as wildtype, skip
@@ -362,7 +373,7 @@ def main():
                         sourceStructure     = mutID, #mutID from last iteration 
                         mutantStructurePath = structure3D_dir, 
                         mutationList        = mutationList,
-                        mutationApproach    = "pyrosetta" #the mutation is happening here
+                        mutationApproach    = mutationApproach #the mutation is happening here
                         )
             
             print(f"MutID: {mutID}")
@@ -379,15 +390,14 @@ def main():
                                 config      = config, 
                                 ligandNr    = ligandNr, 
                                 boxSize     = config.boxSize,
-                                dockingTool = "vinagpu") #vina or vinagpu
+                                dockingTool = dockingTool) #vina or vinagpu
 
             #-----------------------
             ppo_agent.rewards.append(reward)
             ppo_agent.isTerminals.append(residoraConfig["done"]) #TODO make done depend on the enzyme stability
             
-            log_t.write(
-                f"{generation},{episode},{reward},{mutationList[0][0]},{mutationList[0][1]},{mutationList[0][2]}\n"
-            )
+            log_t.write(f"{generation},{episode},{round(reward, 4)},{mutationList[0][0]},{mutationList[0][1]},{mutationList[0][2]}\n")
+            log_t.flush()
 
             # ---------------------
             time_step +=1
@@ -416,7 +426,7 @@ def main():
 
                 # print average reward till last episode
                 print_avg_reward = print_running_reward / print_running_episodes
-                print_avg_reward = round(print_avg_reward, 2)
+                print_avg_reward = round(print_avg_reward, 4)
 
                 print("###########################################################################")
                 print("Generation : {} \t\t Timestep : {} \t\t Average Reward : {}".format(generation, time_step, print_avg_reward))
@@ -425,7 +435,6 @@ def main():
                 print_running_reward = 0
                 print_running_episodes = 0
 
-                
             # save model weights
             if time_step % residoraConfig["save_model_freq"] == 0:
                 print("--------------------------------------------------------------------------------------------")
@@ -435,12 +444,11 @@ def main():
                 print("Elapsed Time  : ", datetime.now().replace(microsecond=0) - start_time)
                 print("--------------------------------------------------------------------------------------------")
                 
-            # break; if the episode is over
+            # break; if the episode is over, but never will!!
             if residoraConfig["done"]:
                 break
 
-
-
+        
         print_running_reward += current_ep_reward
         print_running_episodes += 1
         
@@ -453,43 +461,160 @@ def main():
     log_f.close()        
     log_t.close()        
 
+    ##################################################################################
 
+    #---------------------------------------
+    # ----------- PostProcess --------------
+    plotRewardByGeneration(filepath = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 
+                            title="Reward over generations",
+                            window_size = 50, 
+                            fileName="generationVsReward.png")
+    
+    plotMutationBehaviour(filepath  = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 
+                      title     = "Mutations over generations",
+                      addText   = True, 
+                      fileName  = "mutationBehaviour.png")
+    
+    summaryTable = mutation_summary(filepath = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 
+                                 output_filename='mutation_summary.csv')
+    
+
+#//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 if __name__ == "__main__":
-    """ 
+
     #FèGE ALLES IN MAIN FUNCTION
-    import json
+    import yaml
     import argparse
+    from pprint import pprint
 
-    def main(config_paths):
-        configs = []
-        for config_path in config_paths:
-            with open(config_path, 'r') as f:
-                config = json.load(f)
-                configs.append(config)
-
-        for i, config in enumerate(configs):
-            learning_rate = config['learning_rate']
-            batch_size = config['batch_size']
-            epochs = config['epochs']
-
-            # Your deep learning code here
-            print(f'Running config {i+1}: learning_rate={learning_rate}, batch_size={batch_size}, epochs={epochs}')
-        
     #ONLY THIS REMAINS FOR IF NAME MAIN
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, required=True, nargs='+', help='Paths to the JSON config files')
-    args = parser.parse_args()
-    """
-    main() 
+    parser.add_argument('--config', type=str, required=True, nargs='+', help='Paths to the YAML config files')
+    args = parser.parse_args()    
+
+    def main(config_path):
+        """
+        usage:  
+            python src/main.py --config path/to/config.yaml
+        """
+        with open(config_path, "r") as f:
+            configs = yaml.safe_load(f)
+            print(configs.keys())
+
+        for configIdx, config in enumerate(configs):
+            #print(config)
+            global_config = configs[config]["globalConfig"]
+            gaesp_config = configs[config]["gaespConfig"]
+            pyroprolex_config = configs[config]["pyroprolexConfig"]
+            residora_config = configs[config]["residoraConfig"]               
+
+            print("gaesp_config:")
+            pprint(gaesp_config)
+
+            print("\n\npyroprolex_config:")
+            pprint(pyroprolex_config)
+
+            print("\n\nresidora_config:")
+            pprint(residora_config)
+
+            print("\n\nresidora_config:")
+            pprint(residora_config)
 
 
+            runIDExtension = global_config["runIDExtension"]
+            runID = datetime.now().strftime("%Y-%b-%d-%H%M") + "_" +runIDExtension
+
+            # Your deep learning code here
+            print("#################################")
+            print(f'Running {config}: ')
+            print("#################################")
+            try:
+                main_Pipeline(runID = runID, **global_config, **gaesp_config, **pyroprolex_config, **residora_config)
+            except:
+                print("hm")
+
+    #------------------
+    main(args.config[0])
+    #------------------
 
 
-""" pycmd.load("/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/0309170a469d8622a1064258796cbc3f88bd5ef5.cif")
-pycmd.save("/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/0309170a469d8622a1064258796cbc3f88bd5ef5.pdb") 
-
-command = f'~/ADFRsuite-1.0/bin/prepare_receptor -r /home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/0309170a469d8622a1064258796cbc3f88bd5ef5.pdb \
-            -o /home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/test/0309170a469d8622a1064258796cbc3f88bd5ef5.pdb -A hydrogens -v -U nphs_lps_waters'  # STILL NEED TO FIGURE OUT HOW TO ACCEPT ALPHAFILL DATA
-
-"""
+"""     
+def main_Pipeline(runID: str, *configUnpack, 
+                  #globalConfig
+                  runIDExtension : str, 
+                  transformerName: str = "facebook/esm2_t6_8M_UR50D", 
+                  vina_gpu_cuda_path: str = "/home/cewinharhar/GITHUB/Vina-GPU-CUDA/Vina-GPU", 
+                  vina_path: str = "/home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64", 
+                  autoDockScript_path: str = "/home/cewinharhar/GITHUB/AutoDock-Vina/example/autodock_scripts", 
+                  metal_containing: bool = True, 
+                  ligandNr: int = 1,
+                  #gaespConfig
+                  wildTypeAASeq: str = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA", 
+                  wildTypeStructurePath: str = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo_relaxed.pdb",
+                  thread: int = 8192, 
+                  num_modes: int = 5, 
+                  boxSize:int = 20, 
+                  gaespSeed: int = 42, 
+                  exhaustiveness: int = 32,
+                  dockingTool: str = "vinagpu",
+                  #pyroprolexConfig
+                  mutationApproach: str = "pyrosetta",
+                  #residoraConfig
+                  max_ep_len: int = 5, 
+                  max_training_timesteps: int = 50, 
+                  save_model_freq: int = 25, 
+                  K_epochs: int = 50, 
+                  gamma: float = 0.99, 
+                  eps_clip: float = 0.2, 
+                  lr_actor: float = 0.0003, 
+                  lr_critic: float = 0.001, 
+                  residoraSeed: int = 13,
+                  
+                  nrNeuronsInHiddenLayer: List = [256], 
+                  activationFunction: str = "tanh", 
+                  useCNN: bool = False, 
+                  stride: int = 4, 
+                  kernel_size: int = 6,  
+                  out_channel: int = 2, 
+                  dropOutProb: float = 0.01, 
+                  residoraDevice: str = "cpu"):
+    
+    print(
+        runID,
+        runIDExtension,
+        transformerName,
+        vina_gpu_cuda_path,
+        vina_path,
+        autoDockScript_path,
+        metal_containing,
+        ligandNr,
+        wildTypeAASeq,
+        wildTypeStructurePath,
+        thread,
+        num_modes,
+        boxSize,
+        gaespSeed,
+        exhaustiveness,
+        dockingTool,
+        mutationApproach,
+        max_ep_len,
+        max_training_timesteps,
+        save_model_freq,
+        K_epochs,
+        gamma,
+        eps_clip,
+        lr_actor,
+        lr_critic,
+        residoraSeed,
+        nrNeuronsInHiddenLayer,
+        activationFunction,
+        useCNN,
+        stride,
+        kernel_size,
+        out_channel,
+        dropOutProb,
+        residoraDevice
+    ) """
+ 

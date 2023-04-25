@@ -110,18 +110,36 @@ def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config
     ps = subprocess.Popen([vina_docking],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     stdout, stderr = ps.communicate()
 
+    #------------------------------
+    #------ Error handling --------
+    #Try docking 2 times and if not successfull return the punishment
     try:
         #extract results from vina docking
         vinaOutput   = extractTableFromVinaOutput(stdout.decode())
-        print(stdout.decode())
-        print(f" \n Docking successfull!! \n \n {vinaOutput}")        
+        #print(stdout.decode())      
         nrOfVinaPred = len(vinaOutput)
-    except Exception as err:
+    except RuntimeError as err:
         print(f"Error in main_gaesp > extractTableFromVinaOutput", err)
         print(f"stdout:\n{stdout}\n\n\nstderr:\n{stderr}")
-
-        return punishment 
-
+        print("--------------\nTrying again\n--------------\n")
+        ps = subprocess.Popen([vina_docking],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+        stdout, stderr  = ps.communicate()    
+        try:
+            vinaOutput      = extractTableFromVinaOutput(stdout.decode())
+            nrOfVinaPred    = len(vinaOutput)
+        except RuntimeError:
+            print(f"Docking of {mutID} Failed!")
+            mutantClass_.addDockingResult(
+                generation      = generation, 
+                mutID           = mutID,
+                ligandInSmiles  = ligandNrInSmiles, 
+                dockingResPath  = None, 
+                dockingResTable = None
+            )
+            return punishment
+        
+    #-------------------------------
+    #------ Spliting output --------
     if dockingTool == "vinagpu":
         try:
             #split the vina output pdbqt file into N single files each with one pose (done with the -m flag)
@@ -132,14 +150,12 @@ def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config
         except Exception as err:
             print(f"Error in main_gaesp > obabel", err)
             print(f"stdout: {stdout}\nstderr: {stderr}")
-
     elif dockingTool == "vina":
     #split the files into individual mol2 files
         nrOfVinaPred = splitPDBQTFile(pdbqt_file=ligandOutPath)
 
-
-    #targetCarbonID = getTargetCarbonIDFromMol2File(ligandOutPath)
-
+    #-------------------------------
+    #------ Distance to FE ---------
     distances = calculateDistanceFromTargetCarbonToFe(
         receptorPath    = receptor, 
         ligandPath      = ligandOutPath, 
@@ -150,7 +166,8 @@ def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config
         )
 
     vinaOutput["distTargetCarbonToFE"] = distances
-
+    
+    print(f" \n Docking successfull!! \n \n {vinaOutput}")  
     print(f"Number of results: {nrOfVinaPred}")    
 
     #save results in corresponding mutantclass subdict

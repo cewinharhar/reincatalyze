@@ -2,8 +2,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+from os.path import join as pj
 
-def plot_data(filepath, x_label='Generation', y_label='Reward', title='Reward vs Generation', window_size=3, fileName : str = None):
+def plotRewardByGeneration(filepath, x_label='Generation', y_label='Reward', title='Reward vs Generation', window_size=3, fileName : str = None):
     # Read the CSV file with pandas
     data = pd.read_csv(filepath)
 
@@ -29,26 +30,22 @@ def plot_data(filepath, x_label='Generation', y_label='Reward', title='Reward vs
 
     if fileName:
         # Save the plot in the same directory as the CSV file
-        plot_path = os.path.join(os.path.dirname(filepath), fileName)
+        plot_path = pj(os.path.dirname(filepath), fileName)
         plt.savefig(plot_path)
         print(f"Plot saved at {plot_path}")
-
-    # Display the plot
-    plt.legend()
-    plt.show()
-
+    else:
+        # Display the plot
+        plt.legend()
+        plt.show()
 
 # Example usage
-plot_data('path/to/your/csv_file.csv')
-# Example usage
-plot_data(filepath = 'log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07_timestep.csv', window_size = 50, savePlot=True)
-plot_data(filepath = 'log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07.csv', window_size = 50)
+""" plotRewardByGeneration(filepath = 'log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07_timestep.csv', 
+                        title="Reward over generations",
+                        window_size = 50, 
+                        fileName="generationVsReward.png") """
 
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 
-def plot_mutation_behavior(filepath, x_label='Generation', y_label='Mutation Position', title='Mutation Behavior', addText : bool = False, fileName : str = None):
+def plotMutationBehaviour(filepath, x_label='Generation', y_label='Mutation Position', title='Mutation Behavior', addText : bool = False, fileName : str = None):
     # Read the CSV file with pandas
     data = pd.read_csv(filepath)
 
@@ -56,8 +53,8 @@ def plot_mutation_behavior(filepath, x_label='Generation', y_label='Mutation Pos
     sns.set_theme(style='whitegrid')
 
     # Set up the main plot
-    plt.figure(figsize=(12, 6))
-    sns.scatterplot(x='generation', y='mutationResidue', data=data, s=100, alpha=0.6)
+    plt.figure(figsize=(18, 9))
+    sns.scatterplot(x='generation', y='mutationResidue', data=data, s=50, alpha=0.6)
 
     if addText:
         # Add mutation information (oldAA -> newAA) as text labels
@@ -71,7 +68,7 @@ def plot_mutation_behavior(filepath, x_label='Generation', y_label='Mutation Pos
 
     if fileName:
         # Save the plot in the same directory as the CSV file
-        plot_path = os.path.join(os.path.dirname(filepath), fileName)
+        plot_path = pj(os.path.dirname(filepath), fileName)
         plt.savefig(plot_path)
         print(f"Plot saved at {plot_path}")
 
@@ -79,10 +76,13 @@ def plot_mutation_behavior(filepath, x_label='Generation', y_label='Mutation Pos
     plt.show()
 
 # Example usage
-plot_mutation_behavior('log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07_timestep.csv', savePlot=True, addText=False, fileName="mutationBehaviour")
+""" plotMutationBehaviour(filepath  = 'log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07_timestep.csv', 
+                      title     = "Mutations over generations",
+                      addText   = False, 
+                      fileName  = "mutationBehaviour") """
 
 
-def mutation_summary(filepath, output_filename=None):
+def mutation_summary(filepath: str, output_filename=None):
     # Read the CSV file with pandas
     data = pd.read_csv(filepath)
 
@@ -96,15 +96,18 @@ def mutation_summary(filepath, output_filename=None):
 
     # Merge the mutation frequencies and most frequent mutations
     summary_table = pd.merge(mutation_freq, most_frequent_mutation[['mutationResidue', 'mutation']], on='mutationResidue')
-
+    
     if output_filename:
-        summary_table.to_csv(output_filename, index=False)
+        summary_table.to_csv(
+            pj(os.path.dirname(filepath), output_filename),
+              index=False)
         print(f"Summary table saved to {output_filename}")
 
     return summary_table
 
-# Example usage
-summary_table = mutation_summary('log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07_timestep.csv', output_filename='mutation_summary.csv')
+""" # Example usage
+summary_table = mutation_summary('log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07_timestep.csv', 
+                                 output_filename='mutation_summary.csv')
 print(summary_table)
 
 selRes = summary_table.mutationResidue.tolist()[0:10]
@@ -114,4 +117,4 @@ selRes = summary_table.mutationResidue.tolist()[0:10]
 data = pd.read_csv('log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07_timestep.csv')
 
 selRes = data[data.generation == 501].mutationResidue.tolist()
-"+".join([str(x) for x in selRes])
+"+".join([str(x) for x in selRes]) """
