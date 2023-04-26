@@ -1,5 +1,7 @@
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
+matplotlib.use('Agg')
 import seaborn as sns
 import os
 from os.path import join as pj
@@ -9,20 +11,27 @@ def plotRewardByGeneration(filepath, x_label='Generation', y_label='Reward', tit
     data = pd.read_csv(filepath)
 
     # Calculate the rolling mean with the specified window size
-    data['reward_smooth'] = data['reward'].rolling(window=window_size).mean()
+    data['reward_smooth_ws5'] = data['reward'].rolling(window=5, min_periods=1).mean()
+    data['reward_smooth_ws10'] = data['reward'].rolling(window=10, min_periods=1).mean()
+    data['reward_smooth'] = data['reward'].rolling(window=window_size, min_periods=1).mean()
 
     # Create a professional-looking plot using seaborn
     sns.set_theme(style='whitegrid')
 
     # Set up the main plot
     plt.figure(figsize=(24, 6))
-    sns.lineplot(x='generation', y='reward', data=data, label='Reward')
-    sns.lineplot(x='generation', y='reward_smooth', data=data, label='Smoothed Reward', linestyle='--')
+    _ = sns.lineplot(x='generation', y='reward', data=data, label='Reward')
+    _ = sns.lineplot(x='generation', y='reward_smooth', data=data, label=f'Smoothed Reward ws{window_size}', linestyle='--')
+    _ = sns.lineplot(x='generation', y='reward_smooth_ws5', data=data, label=f'Smoothed Reward ws{5}', linestyle='--')
+    _ = sns.lineplot(x='generation', y='reward_smooth_ws10', data=data, label=f'Smoothed Reward ws{10}', linestyle='--')
 
     # Set labels and title
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.title(title)
+    _ = plt.xlabel(x_label)
+    _ = plt.ylabel(y_label)
+    _ = plt.title(title)
+
+    # Set the y-axis limit to start at 0
+    _ = plt.ylim(bottom=0)    
 
     # Visualize mutationResidue, oldAA, and newAA information
     #for index, row in data.iterrows():
@@ -31,18 +40,14 @@ def plotRewardByGeneration(filepath, x_label='Generation', y_label='Reward', tit
     if fileName:
         # Save the plot in the same directory as the CSV file
         plot_path = pj(os.path.dirname(filepath), fileName)
-        plt.savefig(plot_path)
+        _ = plt.savefig(plot_path)
         print(f"Plot saved at {plot_path}")
-    else:
-        # Display the plot
-        plt.legend()
-        plt.show()
 
 # Example usage
-""" plotRewardByGeneration(filepath = 'log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07_timestep.csv', 
+""" plotRewardByGeneration(filepath = '/home/cewinharhar/GITHUB/reincatalyze/log/residora/2023-Apr-25-1617_test/2023-Apr-25-1617_test_timestep.csv', 
                         title="Reward over generations",
                         window_size = 50, 
-                        fileName="generationVsReward.png") """
+                        fileName="test.png") """
 
 
 def plotMutationBehaviour(filepath, x_label='Generation', y_label='Mutation Position', title='Mutation Behavior', addText : bool = False, fileName : str = None):
@@ -54,7 +59,7 @@ def plotMutationBehaviour(filepath, x_label='Generation', y_label='Mutation Posi
 
     # Set up the main plot
     plt.figure(figsize=(18, 9))
-    sns.scatterplot(x='generation', y='mutationResidue', data=data, s=50, alpha=0.6)
+    _ = sns.scatterplot(x='generation', y='mutationResidue', data=data, s=50, alpha=0.6)
 
     if addText:
         # Add mutation information (oldAA -> newAA) as text labels
@@ -65,15 +70,14 @@ def plotMutationBehaviour(filepath, x_label='Generation', y_label='Mutation Posi
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(title)
+    # Set the y-axis limit to start at 0
+    plt.ylim(bottom=0)      
 
     if fileName:
         # Save the plot in the same directory as the CSV file
         plot_path = pj(os.path.dirname(filepath), fileName)
         plt.savefig(plot_path)
         print(f"Plot saved at {plot_path}")
-
-    # Display the plot
-    plt.show()
 
 # Example usage
 """ plotMutationBehaviour(filepath  = 'log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07_timestep.csv', 
@@ -118,3 +122,8 @@ data = pd.read_csv('log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07_timestep.cs
 
 selRes = data[data.generation == 501].mutationResidue.tolist()
 "+".join([str(x) for x in selRes]) """
+
+data = pd.read_csv("/home/cewinharhar/GITHUB/reincatalyze/log/residora/2023-Apr-25-2248_maxeplen10_maxtrainstep1000_exh16_gamma099_lrac3e-4_lrcr1e-3/2023-Apr-25-2248_maxeplen10_maxtrainstep1000_exh16_gamma099_lrac3e-4_lrcr1e-3_timestep.csv")
+
+selRes = data[(data.reward>250) & (data.generation == 100)].mutationResidue.tolist()
+"+".join([str(x) for x in selRes])

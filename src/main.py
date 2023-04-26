@@ -467,7 +467,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
     # ----------- PostProcess --------------
     plotRewardByGeneration(filepath = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 
                             title="Reward over generations",
-                            window_size = 50, 
+                            window_size = 20, 
                             fileName="generationVsReward.png")
     
     plotMutationBehaviour(filepath  = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 
@@ -501,6 +501,7 @@ if __name__ == "__main__":
         """
         with open(config_path, "r") as f:
             configs = yaml.safe_load(f)
+            f.close()
             print(configs.keys())
 
         for configIdx, config in enumerate(configs):
@@ -534,6 +535,7 @@ if __name__ == "__main__":
                 main_Pipeline(runID = runID, **global_config, **gaesp_config, **pyroprolex_config, **residora_config)
             except:
                 print("hm")
+                continue #go to next configuration
 
     #------------------
     main(args.config[0])
