@@ -29,7 +29,7 @@ from src.gaespHelpers.calculateDistanceFromTargetCarbonToFe import calculateDist
 #                   Preparation
 ########################################################
 
-def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config : configObj, ligandNr : int, dockingTool : str = "vinagpu", flexibelDocking : bool = True, distanceTreshold : float = 10.0, punishment : float = -20.0, boxSize : int = 20):
+def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutantClass, config : configObj, ligandNr : int, dockingTool : str = "vinagpu", flexibelDocking : bool = True, distanceTreshold : float = 10.0, punishment : float = -20.0, boxSize : int = 20):
     """
     Dock a ligand with a protein structure specified by its generation and mutation ID, and store the docking results in the mutantClass object.
     
@@ -50,7 +50,7 @@ def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config
     #---------------------- Docking --------------------------
 
     #Iterate through all mutants of 1 generation, Prepare the enzymes, find center, transform to pdbqt
-    prepareReceptors(runID=config.runID, generation=generation, mutID = mutID, mutantClass_= mutantClass_, config = config)
+    prepareReceptors(runID=config.runID, generation=generation, episode=episode, mutID = mutID, mutantClass_= mutantClass_, config = config)
 
     #for mutID in mutantClass_.generationDict[generation].keys():
 
@@ -81,7 +81,7 @@ def main_gaesp(generation : int, mutID : str, mutantClass_ : mutantClass, config
         vina_docking=f"{config.vina_gpu_cuda_path} --thread {config.thread} --receptor {receptor} --ligand {ligand4Cmd} \
                         --seed {config.seed} --center_x {cx} --center_y {cy} --center_z {cz}  \
                         --size_x {sx} --size_y {sy} --size_z {sz} \
-                        --out {ligandOutPath} --num_modes {config.num_modes} --exhaustiveness {config.exhaustiveness}"
+                        --out {ligandOutPath} --num_modes {config.num_modes} --search_depth {config.exhaustiveness}"
     elif dockingTool.lower() == "vina":
         if flexibelDocking: #https://autodock-vina.readthedocs.io/en/latest/docking_flexible.html
             rigTmpPath = pj(config.data_dir, "tmp/rig.pdbqt")

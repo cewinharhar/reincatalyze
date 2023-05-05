@@ -128,18 +128,3 @@ if __name__ == "__main__":
                             target_structure_path=target_structure_path_mutation,
                             nrOfNeighboursToRelax=2)
     
-
-
-
-
-
-    amino_acid_sequence_mut = list(amino_acid_sequence)
-    amino_acid_sequence_mut[224] = "A"
-    amino_acid_sequence_mut = "".join(amino_acid_sequence_mut)
-
-    source_structure_path = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/pyroprolex_mutation.pdb"
-    target_structure_path_relax = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/pyroprolex_globalRelax.pdb"
-    main_pyroprolex(source_structure_path=source_structure_path,
-                    target_structure_path=target_structure_path_relax)
-
-

@@ -4,7 +4,7 @@ from src.configObj import configObj
 import subprocess
 import copy
  
-def prepareReceptors(runID: str, generation: int, mutID : str, mutantClass_: mutantClass, config : configObj):
+def prepareReceptors(runID: str, generation: int, episode: int, mutID : str, mutantClass_: mutantClass, config : configObj):
     """
     Prepare receptor files for molecular docking.
 
@@ -42,7 +42,7 @@ def prepareReceptors(runID: str, generation: int, mutID : str, mutantClass_: mut
 
     # ADFRsuit transformation
     try:
-        tmp = f"_gen{generation}.pdbqt"
+        tmp = f"_gen{generation}_ep{episode}.pdbqt"
         outFile = mutantClass_.generationDict[generation][mutID]["structurePath"].replace(replaceStr, tmp)
 
         command = f'~/ADFRsuite-1.0/bin/prepare_receptor -r {mutantClass_.generationDict[generation][mutID]["structurePath"]} \

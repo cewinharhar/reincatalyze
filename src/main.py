@@ -296,7 +296,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
     log_f.write('generation,timestep,reward\n')
     #logfile for each timestep
     log_t = open(pj(residoraConfig["log_dir"], runID + "_timestep.csv"), "w+")
-    log_t.write('generation,episode,reward,mutationResidue,oldAA,newAA\n')
+    log_t.write('generation,episode,reward,mutID,mutationResidue,oldAA,newAA\n')
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
 
@@ -385,6 +385,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
 
             #the information is beeing stored in the mutantClass
             reward = main_gaesp(generation  = generation, 
+                                episode     = episode,
                                 mutID       = mutID, 
                                 mutantClass_= mutants, 
                                 config      = config, 
@@ -396,7 +397,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
             ppo_agent.rewards.append(reward)
             ppo_agent.isTerminals.append(residoraConfig["done"]) #TODO make done depend on the enzyme stability
             
-            log_t.write(f"{generation},{episode},{round(reward, 4)},{mutationList[0][0]},{mutationList[0][1]},{mutationList[0][2]}\n")
+            log_t.write(f"{generation},{episode},{round(reward, 4)},{mutID},{mutationList[0][0]},{mutationList[0][1]},{mutationList[0][2]}\n")
             log_t.flush()
 
             # ---------------------
@@ -468,6 +469,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
     plotRewardByGeneration(filepath = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 
                             title="Reward over generations",
                             window_size = 20, 
+                            yTop = 300,
                             fileName="generationVsReward.png")
     
     plotMutationBehaviour(filepath  = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 

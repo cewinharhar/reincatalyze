@@ -6,7 +6,7 @@ import seaborn as sns
 import os
 from os.path import join as pj
 
-def plotRewardByGeneration(filepath, x_label='Generation', y_label='Reward', title='Reward vs Generation', window_size=3, fileName : str = None):
+def plotRewardByGeneration(filepath, x_label='Generation', y_label='Reward', title='Reward vs Generation', window_size=3, yTop = None, fileName : str = None):
     # Read the CSV file with pandas
     data = pd.read_csv(filepath)
 
@@ -32,6 +32,8 @@ def plotRewardByGeneration(filepath, x_label='Generation', y_label='Reward', tit
 
     # Set the y-axis limit to start at 0
     _ = plt.ylim(bottom=0)    
+    if yTop:
+        _ = plt.ylim(top=yTop)    
 
     # Visualize mutationResidue, oldAA, and newAA information
     #for index, row in data.iterrows():
@@ -123,7 +125,7 @@ data = pd.read_csv('log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07_timestep.cs
 selRes = data[data.generation == 501].mutationResidue.tolist()
 "+".join([str(x) for x in selRes]) """
 
-data = pd.read_csv("/home/cewinharhar/GITHUB/reincatalyze/log/residora/2023-Apr-25-2248_maxeplen10_maxtrainstep1000_exh16_gamma099_lrac3e-4_lrcr1e-3/2023-Apr-25-2248_maxeplen10_maxtrainstep1000_exh16_gamma099_lrac3e-4_lrcr1e-3_timestep.csv")
+""" data = pd.read_csv("/home/cewinharhar/GITHUB/reincatalyze/log/residora/2023-Apr-25-2248_maxeplen10_maxtrainstep1000_exh16_gamma099_lrac3e-4_lrcr1e-3/2023-Apr-25-2248_maxeplen10_maxtrainstep1000_exh16_gamma099_lrac3e-4_lrcr1e-3_timestep.csv")
 
 selRes = data[(data.reward>250) & (data.generation == 100)].mutationResidue.tolist()
-"+".join([str(x) for x in selRes])
+"+".join([str(x) for x in selRes]) """
