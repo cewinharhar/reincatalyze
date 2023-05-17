@@ -91,7 +91,8 @@ target/
 .pytest_cache/
 
 # Data and models
-data/*/*
+data/final/*
+data/processed/*
 models/*
 docker/app/*/*
 *.bin

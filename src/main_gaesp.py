@@ -4,6 +4,7 @@
 
 import subprocess
 from os.path import join as pj
+import signal
 
 import pymol
 from pymol import cmd as pycmd
@@ -29,7 +30,7 @@ from src.gaespHelpers.calculateDistanceFromTargetCarbonToFe import calculateDist
 #                   Preparation
 ########################################################
 
-def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutantClass, config : configObj, ligandNr : int, dockingTool : str = "vinagpu", flexibelDocking : bool = True, distanceTreshold : float = 10.0, punishment : float = -20.0, boxSize : int = 20):
+def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutantClass, config : configObj, ligandNr : int, dockingTool : str = "vinagpu", flexibelDocking : bool = True, distanceTreshold : float = 10.0, punishment : float = -20.0, boxSize : int = 20, timeOut: int = 30):
     """
     Dock a ligand with a protein structure specified by its generation and mutation ID, and store the docking results in the mutantClass object.
     
@@ -82,6 +83,7 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
                         --seed {config.seed} --center_x {cx} --center_y {cy} --center_z {cz}  \
                         --size_x {sx} --size_y {sy} --size_z {sz} \
                         --out {ligandOutPath} --num_modes {config.num_modes} --search_depth {config.exhaustiveness}"
+        #print(vina_docking)
     elif dockingTool.lower() == "vina":
         if flexibelDocking: #https://autodock-vina.readthedocs.io/en/latest/docking_flexible.html
             rigTmpPath = pj(config.data_dir, "tmp/rig.pdbqt")
@@ -100,44 +102,58 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
                         --seed {config.seed} --center_x {cx} --center_y {cy} --center_z {cz}  \
                         --size_x {sx} --size_y {sy} --size_z {sz} \
                         --out {ligandOutPath} --num_modes {config.num_modes} --exhaustiveness {config.exhaustiveness}"
+            
         else:
             print("Use GPU you mustard face")
             raise Exception
 
     
-    #os.system(vina_docking)
-    #run command
-    ps = subprocess.Popen([vina_docking],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
-    stdout, stderr = ps.communicate()
-
     #------------------------------
     #------ Error handling --------
-    #Try docking 2 times and if not successfull return the punishment
+    #Try docking 1 time, if not successfull continue  
+    #os.system(vina_docking)
+    #run command
+    ps = subprocess.Popen(vina_docking,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+
     try:
+        signal.alarm(timeOut) #only run as long as timeout is given. if time passed try again and then skip
+        stdout, stderr = ps.communicate()
+        signal.alarm(0) #cancel alarm if docking successfull
+        ps.terminate()
+
         #extract results from vina docking
         vinaOutput   = extractTableFromVinaOutput(stdout.decode())
         #print(stdout.decode())      
-        nrOfVinaPred = len(vinaOutput)
-    except RuntimeError as err:
-        print(f"Error in main_gaesp > extractTableFromVinaOutput", err)
+        nrOfVinaPred = len(vinaOutput)        
+
+    except TimeoutError:
+        # The docking command took too long, skip the rest of the code
+        print("Docking command timed out, skipping further execution.")
         print(f"stdout:\n{stdout}\n\n\nstderr:\n{stderr}")
-        print("--------------\nTrying again\n--------------\n")
-        ps = subprocess.Popen([vina_docking],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
-        stdout, stderr  = ps.communicate()    
-        try:
-            vinaOutput      = extractTableFromVinaOutput(stdout.decode())
-            nrOfVinaPred    = len(vinaOutput)
-        except RuntimeError:
-            print(f"Docking of {mutID} Failed!")
-            mutantClass_.addDockingResult(
-                generation      = generation, 
-                mutID           = mutID,
-                ligandInSmiles  = ligandNrInSmiles, 
-                dockingResPath  = None, 
-                dockingResTable = None
-            )
-            return punishment
-        
+        ps.terminate()
+
+        print(f"Docking of {mutID} Failed!")
+        mutantClass_.addDockingResult(
+            generation      = generation, 
+            mutID           = mutID,
+            ligandInSmiles  = ligandNrInSmiles, 
+            dockingResPath  = None, 
+            dockingResTable = None
+        )
+        return punishment
+    except:
+        print("An error occurred while executing the docking command.")
+        print(f"Docking of {mutID} Failed!")
+        mutantClass_.addDockingResult(
+            generation      = generation, 
+            mutID           = mutID,
+            ligandInSmiles  = ligandNrInSmiles, 
+            dockingResPath  = None, 
+            dockingResTable = None
+        )        
+        return punishment
+
+
     #-------------------------------
     #------ Spliting output --------
     if dockingTool == "vinagpu":

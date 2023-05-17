@@ -1,20 +1,20 @@
-config3:
+config4:
   globalConfig:
-    runIDExtension: maxeplen10_maxtrainstep10000_seadep16_gamma099_lrac9e-4_lrcr1e-3
+    runIDExtension: sub9_nm5_bs10_s42_ex32_mel10_mts1000_k50_ec02_g099_lra9e-4_lrc1e-3
     transformerName: facebook/esm2_t6_8M_UR50D
     gpu_vina: true
     vina_gpu_cuda_path: /home/cewinharhar/GITHUB/Vina-GPU-CUDA/Vina-GPU
     vina_path: /home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64
     autoDockScript_path: /home/cewinharhar/GITHUB/AutoDock-Vina/example/autodock_scripts
     metal_containing: true
-    ligandNr: 1                 #which ligand to use
+    ligandNr: 8                 #which ligand to use 
   
   gaespConfig:
     wildTypeAASeq: MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA
     wildTypeStructurePath: /home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo_relaxed.pdb
     thread: 8192
     num_modes: 5
-    boxSize: 20
+    boxSize: 10
     gaespSeed: 42
     exhaustiveness: 32 
     dockingTool: vinagpu   

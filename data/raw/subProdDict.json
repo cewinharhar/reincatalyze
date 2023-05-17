@@ -1,0 +1,52 @@
+{
+    "substrate":{
+        "1a" :["Benzylacetone", "2550-26-7"],
+        "2a" :["Benzenpropanoic acid", "501-52-0"],
+        "3a" :["3-3-methoxyphenylpropionic acid","10516-71-9"],
+        "4a" :["Dihydroconiferyl alcohol","2305-13-7"],
+        "5a" :["Dihydroferulic acid","1135-23-5"],
+        "6a" :["3-3-4-Methylendioxyphenyl-propionic acid","2815-95-4"],
+        "7a" :["Dihydrosinapyl alcohol","20736-25-8"],
+        "8a" :["Phenylacetic acid","103-82-2"],
+        "9a" :["Dulcinyl","55418-52-5"]
+    },
+
+    "product":{
+        "1b_RS" :["4-Hydroxy-4-phenyl-2-butanone","5381-93-1"], 
+        "1b_R" :["4-Hydroxy-4-phenyl-2-butanone", "86734-67-0"], 
+        "1b_S" :["4-Hydroxy-4-phenyl-2-butanone", "86734-69-2"], 
+        "1b_des" :["4-Hydroxy-4-phenyl-2-butanone", "122-57-6"], 
+
+        "2b_RS" :["beta-Hydroxybenzene-propanoic acid","3480-87-3"], 
+        "2b_R" :["beta-Hydroxybenzene-propanoic acid","2768-42-5"], 
+        "2b_S" :["beta-Hydroxybenzene-propanoic acid","36567-72-3"], 
+        "2b_des" :["beta-Hydroxybenzene-propanoic acid","621-82-9"], 
+
+        "3b_RS" :["beta-Hydroxy-3-methoxybenzene-propanoic acid","123208-85-5"], 
+        "3b_R" :["beta-Hydroxy-3-methoxybenzene-propanoic acid","944468-46-6"], 
+        "3b_S" :["beta-Hydroxy-3-methoxybenzene-propanoic acid","914085-98-6"],
+
+        "4b_RS" :["1-4-Hydroxy-3-methoxyphenyl-1-3-propanediol","3063-86-3"],
+        "4b_S" :["1-4-Hydroxy-3-methoxyphenyl-1-3-propanediol","2216701-86-7"],
+
+        "5b_RS" :["beta4-Dihydroxy-3-methoxybenzene-propanoic acid","1208-13-5"],
+        "5b_R" :["beta4-Dihydroxy-3-methoxybenzene-propanoic acid","2227836-09-9"],
+        "5b_S" :["beta4-Dihydroxy-3-methoxybenzene-propanoic acid","2227820-59-7"],
+
+        "6b_RS" :["beta-Hydroxy-1-3-benzodioxole-5-propanoic acid","67191-87-1"],
+        "6b_R" :["beta-Hydroxy-1-3-benzodioxole-5-propanoic acid","2227912-15-2"],
+        "6b_S" :["beta-Hydroxy-1-3-benzodioxole-5-propanoic acid","2227663-98-9"],
+
+        "7b_RS" :["1-4-Hydroxy-3-5-dimethoxy-phenyl-1-3-propanediol","111164-45-5"],
+
+        "8b_RS" :["Mandelic acid","90-64-2"],
+        "8b_R" :["Mandelic acid","611-71-2"],
+        "8b_S" :["Mandelic acid","17199-29-0"],
+
+        "9b_RS" :["4-1-3-Benzodioxol-5-yl-4-hydroxy-2-butanone","144850-48-6"],
+        "9b_R" :["4-1-3-Benzodioxol-5-yl-4-hydroxy-2-butanone","1334730-07-7"],
+        "9b_S" :["4-1-3-Benzodioxol-5-yl-4-hydroxy-2-butanone","291526-91-5"]
+    }
+
+}
+
