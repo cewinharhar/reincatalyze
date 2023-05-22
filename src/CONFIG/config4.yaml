@@ -1,6 +1,6 @@
 config4:
   globalConfig:
-    runIDExtension: sub9_nm5_bs10_s42_ex32_mel10_mts1000_k50_ec02_g099_lra9e-4_lrc1e-3
+    runIDExtension: sub9_nm5_bs15_s42_ex16_mel10_mts1000_k50_ec02_g099_lra9e-4_lrc1e-3
     transformerName: facebook/esm2_t6_8M_UR50D
     gpu_vina: true
     vina_gpu_cuda_path: /home/cewinharhar/GITHUB/Vina-GPU-CUDA/Vina-GPU
@@ -13,10 +13,10 @@ config4:
     wildTypeAASeq: MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA
     wildTypeStructurePath: /home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo_relaxed.pdb
     thread: 8192
-    num_modes: 5
-    boxSize: 10
+    num_modes: 3
+    boxSize: 20
     gaespSeed: 42
-    exhaustiveness: 32 
+    exhaustiveness: 16 
     dockingTool: vinagpu   
 
   pyroprolexConfig:

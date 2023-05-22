@@ -53,7 +53,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
                   runIDExtension : str, 
                   transformerName: str = "facebook/esm2_t6_8M_UR50D", 
                   gpu_vina: str = True,
-                  vina_gpu_cuda_path: str = "/home/cewinharhar/GITHUB/Vina-GPU-CUDA/Vina-GPU", 
+                  vina_gpu_cuda_path: str = "/home/cewinharhar/GITHUB/Vina-GPU-2.0/Vina-GPU+/Vina_GPU", 
                   vina_path: str = "/home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64", 
                   autoDockScript_path: str = "/home/cewinharhar/GITHUB/AutoDock-Vina/example/autodock_scripts", 
                   metal_containing: bool = True, 

@@ -4,7 +4,11 @@
 
 import subprocess
 from os.path import join as pj
+import time
+
 import signal
+def handle_timeout(signum, frame):
+    raise TimeoutError
 
 import pymol
 from pymol import cmd as pycmd
@@ -30,7 +34,7 @@ from src.gaespHelpers.calculateDistanceFromTargetCarbonToFe import calculateDist
 #                   Preparation
 ########################################################
 
-def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutantClass, config : configObj, ligandNr : int, dockingTool : str = "vinagpu", flexibelDocking : bool = True, distanceTreshold : float = 10.0, punishment : float = -20.0, boxSize : int = 20, timeOut: int = 30):
+def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutantClass, config : configObj, ligandNr : int, dockingTool : str = "vinagpu", flexibelDocking : bool = True, distanceTreshold : float = 10.0, punishment : float = -20.0, boxSize : int = 20, timeOut: int = 180):
     """
     Dock a ligand with a protein structure specified by its generation and mutation ID, and store the docking results in the mutantClass object.
     
@@ -113,13 +117,21 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
     #Try docking 1 time, if not successfull continue  
     #os.system(vina_docking)
     #run command
-    ps = subprocess.Popen(vina_docking,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+    ps = subprocess.Popen([vina_docking],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
 
     try:
-        signal.alarm(timeOut) #only run as long as timeout is given. if time passed try again and then skip
-        stdout, stderr = ps.communicate()
-        signal.alarm(0) #cancel alarm if docking successfull
-        ps.terminate()
+        print("commuinicate cuda cmd")
+        #signal.signal(signal.SIGALRM, handle_timeout)
+        #signal.alarm(timeOut) #only run as long as timeout is given. if time passed try again and then skip
+        try:
+            stdout, stderr = ps.communicate(timeout=100)  # waits for 300 seconds
+        except subprocess.TimeoutExpired:
+            print("Timeout: Killing process")
+            ps.kill()
+            time.sleep(10)
+            ps = subprocess.Popen([vina_docking],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+            stdout, stderr = ps.communicate()
+
 
         #extract results from vina docking
         vinaOutput   = extractTableFromVinaOutput(stdout.decode())
@@ -141,9 +153,11 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
             dockingResTable = None
         )
         return punishment
-    except:
+    except Exception as err:
+        print(err)
         print("An error occurred while executing the docking command.")
         print(f"Docking of {mutID} Failed!")
+        ps.terminate()
         mutantClass_.addDockingResult(
             generation      = generation, 
             mutID           = mutID,
@@ -158,14 +172,22 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
     #------ Spliting output --------
     if dockingTool == "vinagpu":
         try:
+            print("split")
             #split the vina output pdbqt file into N single files each with one pose (done with the -m flag)
             splitDockRes = f"""obabel {ligandOutPath} -O {ligandOutPath.replace(".pdbqt", "_.mol2")} -m"""
             ps = subprocess.Popen([splitDockRes],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
             stdout, stderr = ps.communicate()
-            #print("obabel output:", stdout)
+
+        except TimeoutError:
+            print(f"Error in main_gaesp > obabel: TIMEOUT")
+            print(f"stdout: {stdout}\nstderr: {stderr}")
+            ps.terminate()
+
         except Exception as err:
             print(f"Error in main_gaesp > obabel", err)
             print(f"stdout: {stdout}\nstderr: {stderr}")
+            ps.terminate()
+
     elif dockingTool == "vina":
     #split the files into individual mol2 files
         nrOfVinaPred = splitPDBQTFile(pdbqt_file=ligandOutPath)
@@ -203,6 +225,6 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
         reward = -1 * affinity * distFactor**2
     else:
         reward = punishment
-
+    print(reward)
     return reward
 
