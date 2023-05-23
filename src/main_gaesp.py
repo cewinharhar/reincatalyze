@@ -83,7 +83,7 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
 
     if dockingTool.lower() == "vinagpu":
         #you could add --exhaustiveness 32 for more precise solution
-        vina_docking=f"{config.vina_gpu_cuda_path} --thread {config.thread} --receptor {receptor} --ligand {ligand4Cmd} \
+        vina_docking=f"./Vina-GPU --receptor {receptor} --ligand {ligand4Cmd} --thread {config.thread}\
                         --seed {config.seed} --center_x {cx} --center_y {cy} --center_z {cz}  \
                         --size_x {sx} --size_y {sy} --size_z {sz} \
                         --out {ligandOutPath} --num_modes {config.num_modes} --search_depth {config.exhaustiveness}"
@@ -117,7 +117,8 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
     #Try docking 1 time, if not successfull continue  
     #os.system(vina_docking)
     #run command
-    ps = subprocess.Popen([vina_docking],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+    #print(vina_docking)
+    ps = subprocess.Popen([vina_docking],shell=True, cwd=config.vina_gpu_cuda_path, stdout=subprocess.PIPE,stderr=subprocess.STDOUT) #ADDING CWD IS CRUCIAL FOR THIS TO WORK
 
     try:
         print("commuinicate cuda cmd")
@@ -129,10 +130,10 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
             print("Timeout: Killing process")
             ps.kill()
             time.sleep(10)
-            ps = subprocess.Popen([vina_docking],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+            ps = subprocess.Popen([vina_docking],shell=True,cwd=config.vina_gpu_cuda_path, stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
             stdout, stderr = ps.communicate()
 
-
+        #print(stdout.decode())
         #extract results from vina docking
         vinaOutput   = extractTableFromVinaOutput(stdout.decode())
         #print(stdout.decode())      
