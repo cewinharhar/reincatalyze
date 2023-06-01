@@ -24,6 +24,7 @@ def prepareLigand4Vina(smiles : List, subName : List, config : configObj):
 
         tmp = subName[idx].replace(" ", "_")
         Chem.MolToMolFile(protonated_lig, filename = f"{config.ligand_files}/ligand_{tmp}.mol")
+        Chem.MolToPDBFile(protonated_lig, filename = f"{config.ligand_files}/ligand_{tmp}.pdb")
 
         meeko_prep = MoleculePreparation()
         meeko_prep.prepare(protonated_lig)
