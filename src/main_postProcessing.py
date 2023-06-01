@@ -120,7 +120,11 @@ selRes = summary_table.mutationResidue.tolist()[0:10]
 "+".join([str(x) for x in selRes])
 
 
-data = pd.read_csv('log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07_timestep.csv')
+data = pd.read_csv('log/residora/2023-May-24-1506_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec02_g099_lra3e-4_lrc3e-3/2023-May-24-1506_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec02_g099_lra3e-4_lrc3e-3.csv')
+
+data[data.reward == data.reward.max()]
+
+
 
 selRes = data[data.generation == 501].mutationResidue.tolist()
 "+".join([str(x) for x in selRes]) """
