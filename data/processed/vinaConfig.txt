@@ -1,0 +1,10 @@
+receptor = /home/cewinharhar/GITHUB/gaesp/data/processed/3D_pred/testRun/aKGD_FE_oxo.pdbqt
+ligand = /home/cewinharhar/GITHUB/gaesp/data/processed/ligands/ligand_1.pdbqt
+center_x = 5.372000217437744
+center_y = -5.349999904632568
+center_z = 2.3239998817443848
+size_x = 25
+size_y = 25
+size_z = 25
+thread = 8192
+search_depth=50

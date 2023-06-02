@@ -1,0 +1,90 @@
+MODEL 1
+REMARK VINA RESULT:      -6.5      0.000      0.000
+REMARK SMILES O=C(O)CCc1ccccc1
+REMARK SMILES IDX 4 1 2 2 1 3 3 4 5 6 6 7 7 8 11 9 8 10 10 11 9 12
+REMARK H PARENT 3 5
+REMARK Flexibility Score: inf
+ROOT
+ATOM      1  C   UNL     1       8.315  -0.689  -2.163  1.00  0.00     0.127 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C   UNL     1       8.436  -1.951  -2.930  1.00  0.00     0.303 C 
+ATOM      3  O   UNL     1       9.551  -2.502  -3.106  1.00  0.00    -0.252 OA
+BRANCH   2   4
+ATOM      4  O   UNL     1       7.317  -2.560  -3.476  1.00  0.00    -0.481 OA
+ATOM      5  H   UNL     1       6.386  -2.259  -3.175  1.00  0.00     0.296 HD
+ENDBRANCH   2   4
+ENDBRANCH   1   2
+BRANCH   1   6
+ATOM      6  C   UNL     1       6.889  -0.535  -1.731  1.00  0.00     0.047 C 
+BRANCH   6   7
+ATOM      7  C   UNL     1       6.682  -0.698  -0.293  1.00  0.00    -0.047 A 
+ATOM      8  C   UNL     1       7.285  -1.727   0.392  1.00  0.00     0.004 A 
+ATOM      9  C   UNL     1       5.876   0.195   0.374  1.00  0.00     0.004 A 
+ATOM     10  C   UNL     1       7.044  -1.821   1.764  1.00  0.00     0.000 A 
+ATOM     11  C   UNL     1       5.638   0.100   1.731  1.00  0.00     0.000 A 
+ATOM     12  C   UNL     1       6.238  -0.928   2.425  1.00  0.00     0.000 A 
+ENDBRANCH   6   7
+ENDBRANCH   1   6
+TORSDOF 4
+ENDMDL
+MODEL 2
+REMARK VINA RESULT:      -6.3      3.197      4.946
+REMARK SMILES O=C(O)CCc1ccccc1
+REMARK SMILES IDX 4 1 2 2 1 3 3 4 5 6 6 7 7 8 11 9 8 10 10 11 9 12
+REMARK H PARENT 3 5
+REMARK Flexibility Score: inf
+ROOT
+ATOM      1  C   UNL     1       5.949  -0.876   1.780  1.00  0.00     0.127 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C   UNL     1       5.385   0.468   2.049  1.00  0.00     0.303 C 
+ATOM      3  O   UNL     1       4.202   0.609   2.445  1.00  0.00    -0.252 OA
+BRANCH   2   4
+ATOM      4  O   UNL     1       6.151   1.608   1.869  1.00  0.00    -0.481 OA
+ATOM      5  H   UNL     1       6.729   1.950   2.642  1.00  0.00     0.296 HD
+ENDBRANCH   2   4
+ENDBRANCH   1   2
+BRANCH   1   6
+ATOM      6  C   UNL     1       7.411  -0.723   1.488  1.00  0.00     0.047 C 
+BRANCH   6   7
+ATOM      7  C   UNL     1       7.726  -0.629   0.063  1.00  0.00    -0.047 A 
+ATOM      8  C   UNL     1       8.869   0.006  -0.364  1.00  0.00     0.004 A 
+ATOM      9  C   UNL     1       6.864  -1.186  -0.853  1.00  0.00     0.004 A 
+ATOM     10  C   UNL     1       9.107   0.058  -1.739  1.00  0.00     0.000 A 
+ATOM     11  C   UNL     1       7.100  -1.134  -2.212  1.00  0.00     0.000 A 
+ATOM     12  C   UNL     1       8.243  -0.499  -2.649  1.00  0.00     0.000 A 
+ENDBRANCH   6   7
+ENDBRANCH   1   6
+TORSDOF 4
+ENDMDL
+MODEL 3
+REMARK VINA RESULT:      -6.1      3.456      5.106
+REMARK SMILES O=C(O)CCc1ccccc1
+REMARK SMILES IDX 4 1 2 2 1 3 3 4 5 6 6 7 7 8 11 9 8 10 10 11 9 12
+REMARK H PARENT 3 5
+REMARK Flexibility Score: inf
+ROOT
+ATOM      1  C   UNL     1       5.089  -0.126   2.043  1.00  0.00     0.127 C 
+ENDROOT
+BRANCH   1   2
+ATOM      2  C   UNL     1       4.413   1.191   1.975  1.00  0.00     0.303 C 
+ATOM      3  O   UNL     1       4.937   2.161   1.374  1.00  0.00    -0.252 OA
+BRANCH   2   4
+ATOM      4  O   UNL     1       3.181   1.388   2.576  1.00  0.00    -0.481 OA
+ATOM      5  H   UNL     1       3.084   1.237   3.584  1.00  0.00     0.296 HD
+ENDBRANCH   2   4
+ENDBRANCH   1   2
+BRANCH   1   6
+ATOM      6  C   UNL     1       6.541   0.073   1.731  1.00  0.00     0.047 C 
+BRANCH   6   7
+ATOM      7  C   UNL     1       7.014  -0.702   0.586  1.00  0.00    -0.047 A 
+ATOM      8  C   UNL     1       6.634  -0.371  -0.694  1.00  0.00     0.004 A 
+ATOM      9  C   UNL     1       7.852  -1.773   0.800  1.00  0.00     0.004 A 
+ATOM     10  C   UNL     1       7.126  -1.155  -1.740  1.00  0.00     0.000 A 
+ATOM     11  C   UNL     1       8.336  -2.548  -0.235  1.00  0.00     0.000 A 
+ATOM     12  C   UNL     1       7.960  -2.223  -1.520  1.00  0.00     0.000 A 
+ENDBRANCH   6   7
+ENDBRANCH   1   6
+TORSDOF 4
+ENDMDL

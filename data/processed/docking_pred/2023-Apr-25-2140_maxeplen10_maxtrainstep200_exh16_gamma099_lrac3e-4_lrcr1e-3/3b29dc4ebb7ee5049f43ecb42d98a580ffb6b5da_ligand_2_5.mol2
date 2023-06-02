@@ -1,0 +1,32 @@
+@<TRIPOS>MOLECULE
+/home/cewinharhar/GITHUB/reincatalyze/data/processed/docking_pred/2023-Apr-25-2140_maxeplen10_maxtrainstep200_exh16_gamma099_lrac3e-4_lrcr1e-3/3b29dc4ebb7ee5049f43ecb42d98a580ffb6b5da_ligand_2.pdbqt
+ 12 12 0 0 0
+SMALL
+GASTEIGER
+
+@<TRIPOS>ATOM
+      1  C          5.3140    2.9280    0.1010 C.3     1  UNL1        0.1270
+      2  C          6.2900    3.7760    0.8340 C.2     1  UNL1        0.3030
+      3  O          6.8660    4.7750    0.3330 O.2     1  UNL1       -0.2520
+      4  O          6.5950    3.4620    2.1500 O.3     1  UNL1       -0.4810
+      5  H          7.1350    4.1620    2.6640 H       1  UNL1        0.2960
+      6  C          5.1880    1.6010    0.7900 C.3     1  UNL1        0.0470
+      7  C          5.9960    0.5360    0.2000 C.2     1  UNL1       -0.0470
+      8  C          6.4930   -0.5280    0.9110 C.2     1  UNL1        0.0040
+      9  C          6.2830    0.5880   -1.1410 C.2     1  UNL1        0.0040
+     10  C          7.2520   -1.5220    0.3400 C.2     1  UNL1        0.0000
+     11  C          7.0400   -0.3890   -1.7450 C.2     1  UNL1        0.0000
+     12  C          7.5360   -1.4630   -1.0080 C.2     1  UNL1        0.0000
+@<TRIPOS>BOND
+     1    11     9    1
+     2    11    12    2
+     3     9     7    2
+     4    12    10    1
+     5     1     6    1
+     6     1     2    1
+     7     7     6    1
+     8     7     8    1
+     9     3     2    2
+    10    10     8    2
+    11     2     4    1
+    12     4     5    1
