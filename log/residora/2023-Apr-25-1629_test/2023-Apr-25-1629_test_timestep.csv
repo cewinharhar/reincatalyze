@@ -1,7 +1,0 @@
-generation,episode,reward,mutationResidue,oldAA,newAA
-1,1,156.0894,260,G,A
-1,2,61.9389,216,D,P
-2,1,87.5647,148,W,R
-2,2,60.3427,263,T,R
-3,1,214.2465,118,V,L
-3,2,206.7169,41,G,A
