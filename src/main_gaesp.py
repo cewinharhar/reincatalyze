@@ -4,6 +4,7 @@
 
 import subprocess
 from os.path import join as pj
+import os
 import time
 
 import signal
@@ -29,6 +30,7 @@ from src.gaespHelpers.prepareReceptors import prepareReceptors
 from src.gaespHelpers.extractTableFromVinaOutput import extractTableFromVinaOutput
 from src.gaespHelpers.getTargetCarbonIDFromMol2File import getTargetCarbonIDFromMol2File
 from src.gaespHelpers.calculateDistanceFromTargetCarbonToFe import calculateDistanceFromTargetCarbonToFe
+from src.gaespHelpers.renameAtomsFromPDB import renameAtomsFromPDB
 
 ########################################################
 #                   Preparation
@@ -173,11 +175,25 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
     #------ Spliting output --------
     if dockingTool == "vinagpu":
         try:
-            print("split")
+            print("split to mol2")
             #split the vina output pdbqt file into N single files each with one pose (done with the -m flag)
             splitDockRes = f"""obabel {ligandOutPath} -O {ligandOutPath.replace(".pdbqt", "_.mol2")} -m"""
             ps = subprocess.Popen([splitDockRes],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
             stdout, stderr = ps.communicate()
+            print("split to pdb")
+            obabelTrans = f"""obabel {ligandOutPath} -O {ligandOutPath.replace(".pdbqt", "_.pdb")} -m"""
+            ps = subprocess.Popen([obabelTrans],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+            stdout, stderr = ps.communicate()
+            print(stdout)
+            print("rename")
+            #rename the pdb files so that we can work with the alignment for the scoring function
+            dir_ = pj(config.data_dir, "processed", "docking_pred", config.runID)
+            print(dir_)
+            file_names = [file_name for file_name in os.listdir(dir_) if file_name.startswith(mutID) and file_name.endswith(".pdb")]
+            print(file_names)
+            for name in file_names:
+                renameAtomsFromPDB(pdb_filename = pj(dir_, name), 
+                                   pdb_output = pj(dir_, name.replace(".pdb", "X.pdb")))
 
         except TimeoutError:
             print(f"Error in main_gaesp > obabel: TIMEOUT")

@@ -1,6 +1,6 @@
 config2:
   globalConfig:
-    runIDExtension: test
+    runIDExtension: mainTest
     transformerName: facebook/esm2_t6_8M_UR50D
     gpu_vina: true
     vina_gpu_cuda_path: /home/cewinharhar/GITHUB/Vina-GPU-2.0/Vina-GPU+
