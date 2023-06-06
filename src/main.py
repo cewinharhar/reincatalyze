@@ -480,7 +480,9 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
     summaryTable = mutation_summary(filepath = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 
                                  output_filename='mutation_summary.csv')
     
-
+    ### EXPORT MUTANTCLASS & CONFIG FILE
+    mutants.export_to_json(pj(residoraConfig["log_dir"], runID + "_mutantClass.json"))
+    config.export_to_json(pj(residoraConfig["log_dir"], runID + "_config.json"))
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

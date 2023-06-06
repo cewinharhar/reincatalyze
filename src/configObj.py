@@ -1,5 +1,18 @@
 import os
 from os.path import join  as pj
+import json
+from json import JSONEncoder
+from pandas import DataFrame
+
+class ConfigObjEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (list, tuple)):
+            return list(obj)
+        if isinstance(obj, DataFrame):
+            return obj.to_json(orient='records')
+        return super().default(obj)
+    
+    
 class configObj:
     def __init__(
         self,
@@ -69,3 +82,9 @@ class configObj:
             if not isExist:
                 # Create a new directory because it does not exist
                 os.makedirs(tmp)  
+
+    def export_to_json(self, file_path):
+            # Export the instance variables as JSON to the specified file path
+            obj_dict = vars(self)
+            with open(file_path, "w") as json_file:
+                json.dump(obj_dict, json_file, indent=4, cls=ConfigObjEncoder)

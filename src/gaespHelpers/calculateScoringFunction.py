@@ -46,7 +46,7 @@ def calculateScoringFunction(
     # Combine the reference protein and selected ligand models into one structure
     reference_structure[0].child_dict['sub9'] = reference_ligand_structure[0]
     # Combine the target protein and selected ligand models into one structure
-    target_protein_structure[0].child_dict['sub9'] = target_ligand_structure[0]
+    target_protein_structure[0].child_dict['sub9'] = target_ligand_structure[0] 
 
     #----------------- FETCH the residues atoms  ---------------
     

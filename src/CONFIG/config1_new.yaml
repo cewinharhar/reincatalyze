@@ -1,6 +1,6 @@
 config2:
   globalConfig:
-    runIDExtension: revival
+    runIDExtension: testExport
     transformerName: facebook/esm2_t6_8M_UR50D
     gpu_vina: true
     vina_gpu_cuda_path: /home/cewinharhar/GITHUB/Vina-GPU-2.0/Vina-GPU+
@@ -23,8 +23,8 @@ config2:
     mutationApproach: pyrosetta
   
   residoraConfig:
-    max_ep_len: 10               #max timesteps in one episode
-    max_training_timesteps: 100  # break training loop if timeteps > max_training_timesteps
+    max_ep_len: 1               #max timesteps in one episode
+    max_training_timesteps: 1  # break training loop if timeteps > max_training_timesteps
     save_model_freq: 25         # save model frequency (in num timesteps)
     K_epochs: 50                # update policy for K epochs
     eps_clip: 0.5               # clip parameter for PPO

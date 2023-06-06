@@ -1,5 +1,7 @@
 import os
 import hashlib
+import json
+from json import JSONEncoder
 from typing import List, Tuple
 from pandas import DataFrame
 import numpy as np
@@ -13,6 +15,14 @@ from src.deepMutHelpers.getMutationsList import getMutationsList
 
 from src.main_pyroprolex import main_pyroprolex, mutateProteinPyrosetta
 
+class ConfigObjEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (list, tuple)):
+            return list(obj)
+        if isinstance(obj, DataFrame):
+            return obj.to_json(orient='records')
+        return super().default(obj)
+    
 class mutantClass:
     def __init__(self, runID: str, wildTypeAASeq: str, wildTypeAAEmbedding: np.array, wildTypeStructurePath : str, ligand_df : DataFrame):
         self.runID = runID
@@ -142,3 +152,21 @@ class mutantClass:
         self.generationDict[generation][mutID]["dockingResults"][ligandInSmiles]["dockingResPath"] = dockingResPath
         self.generationDict[generation][mutID]["dockingResults"][ligandInSmiles]["dockingResTable"] = dockingResTable
         
+    def to_dict(self):
+        # Create a dictionary representation of the object
+        obj_dict = {
+            "runID": self.runID,
+            "wildTypeAASeq": self.wildTypeAASeq,
+            "wildTypeAAEmbedding": self.wildTypeAAEmbedding,
+            "wildTypeStructurePath": self.wildTypeStructurePath,
+            "mutIDListAll": self.mutIDListAll,
+            "generationDict": self.generationDict,
+            "dockingResultsEmpty": self.dockingResultsEmpty
+        }
+        return obj_dict
+
+    def export_to_json(self, file_path):
+        # Convert the object to a dictionary
+        obj_dict = self.to_dict()
+        with open(file_path, "w") as json_file:
+            json.dump(obj_dict, json_file, indent=4, cls=ConfigObjEncoder)
