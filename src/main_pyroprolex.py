@@ -57,7 +57,7 @@ def main_pyroprolex(source_structure_path : str, target_structure_path : str, ma
     """
     """
     #metal detector and mover
-    #metaldetector = SetupMetalsMover()
+    #metaldetector = SetupMetalsMover() #!!!!!!!!!!!!!!!!!!!!!
 
     #Scorefunction
     scorefxn = get_score_function()
@@ -69,6 +69,10 @@ def main_pyroprolex(source_structure_path : str, target_structure_path : str, ma
     # Relax the structure 
     relax = pyrosetta.rosetta.protocols.relax.FastRelax()
     relax.set_scorefxn(scorefxn)
+
+    #if you want to relax the enzyme together with the substrate you need to specify the flag:
+    # -extra_res_fa
+    # the parameters for the flag you get with the mol_to_params.py script
 
     # Load the input PDB file
     try:
@@ -128,3 +132,7 @@ if __name__ == "__main__":
                             target_structure_path=target_structure_path_mutation,
                             nrOfNeighboursToRelax=2)
     
+    main_pyroprolex(
+        source_structure_path="/home/cewinharhar/GITHUB/reincatalyze/data/raw/ortho12_FE_oxo.pdb",
+        target_structure_path="/home/cewinharhar/GITHUB/reincatalyze/data/raw/ortho12_FE_oxo_relaxed.pdb"
+    )

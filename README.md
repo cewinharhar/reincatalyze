@@ -100,7 +100,7 @@ This section should list any major frameworks/libraries used to bootstrap your p
 
 * [![Python][Python.com]][https://python.org]
 * [![PyTorch][pytorch.com]][https://pytorch.org/]
-* [![RShiny][posit.com]][https://posit.com/]
+* [![RShiny][posit.com]][https://posit.com/] 
 * 
 * [![Bootstrap][Bootstrap.com]][Bootstrap-url]
 * [![JQuery][JQuery.com]][JQuery-url]
@@ -115,17 +115,89 @@ This section should list any major frameworks/libraries used to bootstrap your p
 This is an example of how you may give instructions on setting up your project locally.
 To get a local copy up and running follow these simple example steps.
 
-### Prerequisites
+### What you need (maybe):
+1. [Nvidia-cuda](https://developer.nvidia.com/cuda-downloads)
+
+
+### Prerequisites: Working with Docker
 
 This is an example of how to list things you need to use the software and how to install them.
 <br>
-1. **nvidia-container-toolkit**
-   1. Add [repository](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
+1. **Docker** <br />
+Follow the `Install using the apt repository` chapter in: https://docs.docker.com/engine/install/ubuntu/#set-up-the-repository 
+2. **nvidia-container-toolkit**
+   1. Add [repository](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) <br />  if you have ubuntu23 just change the `distribution` variable
    2. `sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit`
    3. `sudo nvidia-ctk runtime configure --runtime=docker`
    4. `sudo systemctl restart docker`
-   5. `sudo docker run --rm --runtime=nvidia --gpus all nvidia/cuda:11.6.2-base-ubuntu20.04 nvidia-smi`
+   5. Check successfull installation with: <br />`sudo docker run --rm --runtime=nvidia --gpus all nvidia/cuda:11.6.2-base-ubuntu20.04 nvidia-smi` <br />
+you should see the normal output of the `nvidia-smi` command. 
 
+
+### Whats inside the docker container:
+
+#### Boost library
+1. Download 
+    * https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.tar.bz2 
+2. mv to /usr/local/ #default location
+3. Extract: `tar --bzip2 -xf boost_1_82_0.tar.bz2`
+4. `sudo ./bootstrap.sh`
+5. `sudo ./b2 install`
+   #now we want to make the path globally accessable
+6. Add this line to your `~/.bashrc` file <br /> `export PATH="$PATH:/usr/local/boost_1_82_0/stage/lib"`
+
+#### Vina-GPU-2.0
+Before setting up Vina-GPU make sure to have exportet the LD_LIBRARY_PATH from above <br />
+1. Clone the [Vina-GPU-2.0](https://github.com/DeltaGroupNJUPT/Vina-GPU-2.0) repository
+2. Change the makefile file to: <br />
+  \# Need to be modified according to different users<br />
+  BOOST_LIB_PATH=/usr/local/boost_1_82_0<br />
+  OPENCL_LIB_PATH=/usr/local/cuda<br />
+  OPENCL_VERSION=-DOPENCL_3_0<br />
+  GPU_PLATFORM=-DNVIDIA_PLATFORM`
+1. cd into the `Vina-GPU-2.0/Vina-GPU+` dir
+2. `make clean && make source` ignore warnings  
+
+#### Autodock-Vina (for scripts)
+1. `git clone https://github.com/ccsb-scripps/AutoDock-Vina.git`
+
+#### Open babel
+
+First you need cmake: 
+
+1. `cd /usr/local/`
+1. `wget https://github.com/Kitware/CMake/releases/download/v3.26.4/cmake-3.26.4-linux-x86_64.sh `
+2. `chmod +x cmake-3.26.4-linux-x86_64.sh`
+3. `sudo ./cmake-3.26.4-linux-x86_64.sh`
+4. `sudo rm cmake-3.26.4-linux-x86_64.sh`
+5. `export PATH="$PATH:/usr/local/cmake-3.26.4-linux-x86_64/bin"`
+
+Binary location for manual download: https://sourceforge.net/projects/openbabel/files/openbabel/2.4.1/
+
+RATHER DO WITH CONDA: ``conda install -c conda-forge openbabel
+
+conda install -c conda-forge openbabel
+
+If conda doesnt work: 
+1. bash download <br />
+   `wget https://sourceforge.net/projects/openbabel/files/openbabel/2.4.1/openbabel-2.4.1.tar.gz/download -O openbabel-2.4.1.tar.gz`
+2. `tar -xf openbabel-2.4.1.tar.gz`
+3. `cd openbabel-2.4.1`
+4. `mkdir build && cd build`
+5. `cmake ..`
+6. `make -j2`
+7. `sudo make install`
+
+#### Pyrossetta
+
+Follow instructions: https://www.pyrosetta.org/downloads
+(tar is in /docker_reincat_pipeline)
+chapter: Installation with an environment manager
+
+#### ADFRsuite-1.0
+1. download linux version: `wget https://ccsb.scripps.edu/adfr/download/1028/ -O ADFRsuite_Linux-x86_64_1.0_install`
+2. make it executable with `chmod a+x ADFRsuite_Linux-x86_64_1.0_install` 
+3. and install with `sh ADFRsuite_Linux-x86_64_1.0_install`
 
 
 ### Installation

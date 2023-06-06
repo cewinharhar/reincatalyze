@@ -91,9 +91,9 @@ target/
 .pytest_cache/
 
 # Data and models
-data/final/*
 data/processed/*
 models/*
 docker/app/*/*
+docker_reincat_pipeline/*
 *.bin
 !.gitkeep

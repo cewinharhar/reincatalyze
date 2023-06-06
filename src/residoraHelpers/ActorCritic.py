@@ -65,7 +65,7 @@ class ActorCritic(nn.Module):
                     nn.Softmax(dim = -1)               
                 )
             )
-            self.critic.cnn.append(
+            self.critic.cnn.append( #Benjamin
                 nn.Sequential(
                     nn.Linear(self.linearInputDim , nrNeuronsInHiddenLayers[1]),
                     self.activationFunction(),

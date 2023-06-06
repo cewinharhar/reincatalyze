@@ -535,8 +535,8 @@ if __name__ == "__main__":
             print("#################################")
             try:
                 main_Pipeline(runID = runID, **global_config, **gaesp_config, **pyroprolex_config, **residora_config)
-            except:
-                print("hm")
+            except Exception as err:
+                print(err)
                 continue #go to next configuration
 
     #------------------

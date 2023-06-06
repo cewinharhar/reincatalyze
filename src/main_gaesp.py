@@ -156,6 +156,7 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
             dockingResTable = None
         )
         return punishment
+    
     except Exception as err:
         print(err)
         print("An error occurred while executing the docking command.")
@@ -181,10 +182,11 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
             ps = subprocess.Popen([splitDockRes],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
             stdout, stderr = ps.communicate()
             print("split to pdb")
+            #print(stdout)
             obabelTrans = f"""obabel {ligandOutPath} -O {ligandOutPath.replace(".pdbqt", "_.pdb")} -m"""
             ps = subprocess.Popen([obabelTrans],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
             stdout, stderr = ps.communicate()
-            print(stdout)
+            #print(stdout)
             print("rename")
             #rename the pdb files so that we can work with the alignment for the scoring function
             dir_ = pj(config.data_dir, "processed", "docking_pred", config.runID)
