@@ -88,7 +88,7 @@ def calculateScoringFunction(
         io.set_structure(target_protein_structure)
         io.save(output) 
 
-    print(f"Alignment complete. RMS = {rmsd}")
+    #print(f"Alignment complete. RMS = {rmsd}")
 
     return rmsd
 

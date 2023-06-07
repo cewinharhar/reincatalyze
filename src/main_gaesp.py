@@ -37,7 +37,7 @@ from src.gaespHelpers.renameAtomsFromPDB import renameAtomsFromPDB
 #                   Preparation
 ########################################################
 
-def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutantClass, config : configObj, ligandNr : int, dockingTool : str = "vinagpu", flexibelDocking : bool = True, distanceTreshold : float = 10.0, punishment : float = -20.0, boxSize : int = 20, timeOut: int = 180):
+def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutantClass, config : configObj, ligandNr : int, dockingTool : str = "vinagpu", flexibelDocking : bool = True, distanceTreshold : float = 8, rmseTreshold : float = 8.0, punishment : float = -20.0, boxSize : int = 20, timeOut: int = 180):
     """
     Dock a ligand with a protein structure specified by its generation and mutation ID, and store the docking results in the mutantClass object.
     
@@ -175,14 +175,15 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
 
     #-------------------------------
     #------ Spliting output --------
+    print("...Splitting...")
     if dockingTool == "vinagpu":
         try:
-            print("split to mol2")
+            #print("split to mol2")
             #split the vina output pdbqt file into N single files each with one pose (done with the -m flag)
             splitDockRes = f"""obabel {ligandOutPath} -O {ligandOutPath.replace(".pdbqt", "_.mol2")} -m"""
             ps = subprocess.Popen([splitDockRes],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
             stdout, stderr = ps.communicate()
-            print("split to pdb")
+            #print("split to pdb")
             
             obabelTrans = f"""obabel {ligandOutPath} -O {ligandOutPath.replace(".pdbqt", "_.pdb")} -m"""
             ps = subprocess.Popen([obabelTrans],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
@@ -218,11 +219,11 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
     dir_ = pj(config.data_dir, "processed", "docking_pred", config.runID)
     #print(dir_)
     file_names = [file_name for file_name in os.listdir(dir_) if file_name.startswith(mutID) and file_name.endswith("X.pdb")]
-    print(f"Input for scoring function: \n {file_names}")
+    #print(f"Input for scoring function: \n {file_names}")
     #print(file_names)
     rmsdScoringFunction = []
     for idx, target_ligand_pdb in enumerate(file_names):
-        print(f"working on: {target_ligand_pdb}")
+        #print(f"working on: {target_ligand_pdb}")
         try:
             rmsd = calculateScoringFunction(
             reference_pdb       = mutantClass_.reference, #"data/raw/reference/reference.pdb",
@@ -231,13 +232,15 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
             target_protein_pdb  = mutantClass_.generationDict[generation][mutID]["structurePath"],
             target_ligand_pdb   = pj(dir_, target_ligand_pdb),  
             targetResidues      = [167, 225, 169],
-            output              = mutantClass_.generationDict[generation][mutID]["structurePath"].replace(".pdb", f"gen{generation}_ep{episode}_{idx}_superimposed.pdb")
+            output              = mutantClass_.generationDict[generation][mutID]["structurePath"].replace(".pdb", f"_gen{generation}_ep{episode}_{idx}_superimposed.pdb")
             )
             rmsdScoringFunction.append(rmsd)
         except Exception as err:
             print(err)
-        print(f"RMSD for {target_ligand_pdb}: \n {rmsd}")
+        #print(f"RMSD for {target_ligand_pdb}: \n {rmsd}")
         
+    vinaOutput["RMSE"] = rmsdScoringFunction
+
     #-------------------------------
     #------ Distance to FE ---------
     distances = calculateDistanceFromTargetCarbonToFe(
@@ -264,13 +267,16 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
     )
 
     #the reward is calculated so that the distance to the target carbon has the most influence
-    mode, affinity, distance = vinaOutput[vinaOutput.distTargetCarbonToFE == vinaOutput.distTargetCarbonToFE.min()].values[0]
+    mode, affinity, distance, RMSE = vinaOutput[vinaOutput.RMSE == vinaOutput.RMSE.min()].values[0]
     
-    if distance < distanceTreshold:
-        distFactor = distanceTreshold - distance
-        reward = -1 * affinity * distFactor**2
+    #if distance < distanceTreshold:
+    #    distFactor = distanceTreshold - distance
+    #    reward = -1 * affinity * distFactor**2
+    if RMSE < rmseTreshold and distance < distanceTreshold:
+        
+        reward = -1*affinity * (rmseTreshold - RMSE)**2
     else:
         reward = punishment
-    print(reward)
+    #print(reward)
     return reward
 
