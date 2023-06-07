@@ -1,0 +1,30 @@
+{
+    "runID": "2023-Jun-07-2017_implementedScoringFunction",
+    "working_dir": "/home/cewinharhar/GITHUB/reincatalyze",
+    "data_dir": "/home/cewinharhar/GITHUB/reincatalyze/data/",
+    "log_dir": "/home/cewinharhar/GITHUB/reincatalyze/log/docking",
+    "vina_path": "/home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64",
+    "vina_gpu_path": "",
+    "vina_gpu_cuda_path": "/home/cewinharhar/GITHUB/Vina-GPU-2.0/Vina-GPU+",
+    "autoDockScript_path": "/home/cewinharhar/GITHUB/AutoDock-Vina/example/autodock_scripts",
+    "thread": 8000,
+    "ligand_files": "/home/cewinharhar/GITHUB/reincatalyze/data/processed/ligands",
+    "slopes_file": "",
+    "cofactor": "",
+    "gpu_vina": true,
+    "result_path": "Results",
+    "receptors": [
+        ""
+    ],
+    "generations": 10,
+    "NADP_cofactor": false,
+    "metal_containing": true,
+    "align": false,
+    "output_formate": "pdbqt",
+    "num_modes": 5,
+    "seed": 42,
+    "exhaustiveness": 16,
+    "boxSize": 15,
+    "energy_range": 3,
+    "ligand_df": "[{\"ligand_name\":\"Benzylacetone\",\"ligand_smiles\":\"CC(=O)CCc1ccccc1\",\"ligand_cas\":\"2550-26-7\",\"carbonID\":6},{\"ligand_name\":\"Benzenpropanoic_acid\",\"ligand_smiles\":\"OC(=O)CCc1ccccc1\",\"ligand_cas\":\"501-52-0\",\"carbonID\":6},{\"ligand_name\":\"3-3-methoxyphenylpropionic_acid\",\"ligand_smiles\":\"COc1cccc(CCC(O)=O)c1\",\"ligand_cas\":\"10516-71-9\",\"carbonID\":6},{\"ligand_name\":\"Dihydroconiferyl_alcohol\",\"ligand_smiles\":\"COc1cc(CCCO)ccc1O\",\"ligand_cas\":\"2305-13-7\",\"carbonID\":6},{\"ligand_name\":\"Dihydroferulic_acid\",\"ligand_smiles\":\"COc1cc(CCC(O)=O)ccc1O\",\"ligand_cas\":\"1135-23-5\",\"carbonID\":6},{\"ligand_name\":\"3-3-4-Methylendioxyphenyl-propionic_acid\",\"ligand_smiles\":\"OC(=O)CCc1ccc2OCOc2c1\",\"ligand_cas\":\"2815-95-4\",\"carbonID\":6},{\"ligand_name\":\"Dihydrosinapyl_alcohol\",\"ligand_smiles\":\"COc1cc(CCCO)cc(OC)c1O\",\"ligand_cas\":\"20736-25-8\",\"carbonID\":6},{\"ligand_name\":\"Phenylacetic_acid\",\"ligand_smiles\":\"OC(=O)Cc1ccccc1\",\"ligand_cas\":\"103-82-2\",\"carbonID\":6},{\"ligand_name\":\"Dulcinyl\",\"ligand_smiles\":\"CC(=O)CCc1ccc2OCOc2c1\",\"ligand_cas\":\"55418-52-5\",\"carbonID\":6}]"
+}

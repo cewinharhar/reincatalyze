@@ -397,6 +397,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
                                 boxSize     = config.boxSize,
                                 dockingTool = dockingTool) #vina or vinagpu
 
+            print(f"---- \n Reward: {reward} \n  ---- \n")
             #-----------------------
             ppo_agent.rewards.append(reward)
             ppo_agent.isTerminals.append(residoraConfig["done"]) #TODO make done depend on the enzyme stability
