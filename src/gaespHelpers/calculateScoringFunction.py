@@ -75,13 +75,18 @@ def calculateScoringFunction(
     superimposer = Superimposer()
     superimposer.set_atoms(refList, tarList)
     superimposer.apply(target_protein_structure.get_atoms())
+    superimposer.apply(target_ligand_structure.get_atoms())
+
+    #add the ligand to target to export both in 1 file
+    for chain in target_ligand_structure[0]:
+        target_protein_structure[0].add(chain)
 
     rmsd = superimposer.rms
 
     if output:
         io = PDBIO()
         io.set_structure(target_protein_structure)
-        io.save(output)    
+        io.save(output) 
 
     print(f"Alignment complete. RMS = {rmsd}")
 
@@ -101,7 +106,8 @@ if __name__ == "__main__":
         includeAtoms = ['N', 'CA', 'C', 'O'],
         ignoreAtom = "H",
         metal_ids = ['FE2','FE'],
-        output="data/raw/test/akgd31_superimpose_ortho12.pdb"
+        output="data/raw/test/akgd31_superimpose_ortho12.pdb",
+        outputTargetLigand="data/raw/test/akgd31Ligand_superimpose_ortho12.pdb"
     )
 
 
@@ -111,18 +117,20 @@ if __name__ == "__main__":
     
     #------------------------------------------------------------------
 
-"""     ligand4Cmd = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/test/sub9_original.pdbqt"
+"""     import subprocess
+
+    ligand4Cmd = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/test/sub9_original.pdbqt"
     thread = 8000
     seed = 42
     cx = cy = cz = 0
     sx = sy = sz = 20
-    ligandOutPath = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/test/reference_sub9.pdbqt"
-    num_modes = 5
-    exhaustiveness = 32
+    ligandOutPath = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/ortho12_FE_oxo_relaxed_metal_adfrCleaned_sub9.pdbqt"
+    num_modes = 10
+    exhaustiveness = 16 
     vina_gpu_cuda_path = "/home/cewinharhar/GITHUB/Vina-GPU-2.0/Vina-GPU+"
 
-    receptor = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/ortho12_FE_oxo.pdb"
-    outFile = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/test/reference.pdbqt"
+    receptor = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/ortho12_FE_oxo_relaxed_metal.pdb"
+    outFile = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/ortho12_FE_oxo_relaxed_metal_adfrCleaned.pdbqt"
 
     from src.main_pyroprolex import main_pyroprolex
     main_pyroprolex(
@@ -136,8 +144,7 @@ if __name__ == "__main__":
     ps = subprocess.Popen([command],shell=True, stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     stdout, stderr = ps.communicate(timeout=100)
 
-    receptor = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/test/reference.pdbqt"
-    outFile = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/test/reference_ligand.pdbqt"
+    receptor = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/ortho12_FE_oxo_relaxed_metal_adfrCleaned.pdbqt"
 
     vina_docking=f"./Vina-GPU --receptor {receptor} --ligand {ligand4Cmd} --thread {thread}\
                     --seed {seed} --center_x {cx} --center_y {cy} --center_z {cz}  \
@@ -145,15 +152,15 @@ if __name__ == "__main__":
                     --out {ligandOutPath} --num_modes {num_modes} --search_depth {exhaustiveness}"
 
     ps = subprocess.Popen([vina_docking],shell=True, cwd=vina_gpu_cuda_path, stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
-    stdout, stderr = ps.communicate(timeout=100)
- """
+    stdout, stderr = ps.communicate(timeout=100) """
+
     #obabel = f"""obabel {ligandOutPath} -O {ligandOutPath.replace(".pdbqt", "_.pdb")} -m"""
 """     ps = subprocess.Popen([obabel],shell=True, stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     stdout, stderr = ps.communicate(timeout=100)
 
     from src.gaespHelpers.renameAtomsFromPDB import renameAtomsFromPDB
     renameAtomsFromPDB(
-        "/home/cewinharhar/GITHUB/reincatalyze/data/raw/test/reference_ligand.pdb",
+        "/home/cewinharhar/GITHUB/reincatalyze/data/raw/ortho12_FE_oxo_relaxed_metal_adfrCleaned_sub9_9.pdb",
         "/home/cewinharhar/GITHUB/reincatalyze/data/raw/test/reference_ligandX.pdb"
     ) """
 

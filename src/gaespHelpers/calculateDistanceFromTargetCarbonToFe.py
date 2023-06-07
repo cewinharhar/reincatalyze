@@ -21,16 +21,6 @@ def calculateDistanceFromTargetCarbonToFe(
     - resname (str, optional): The name of the ligand residue. Defaults to "UNL".
     - metalType (str, optional): The type of metal atom in the receptor protein. Defaults to "FE".
 
-    Returns:
-    - dis (List[float]): A list of distances (in Angstroms) between the target carbon atom 
-                         and the metal atom, for each mode of the ligand.
-
-    Raises:
-    - TypeError: If receptorPath or ligandPath is not a string, or if num_modes is not a list 
-                 of integers.
-    - ValueError: If receptorPath or ligandPath is an empty string, or if targetCarbonID is 
-                   not a positive integer, or if resname or metalType is not a string.
-
     Examples:
         receptorPath = "receptor.pdb"
         ligandPath = "ligand.pdbqt"

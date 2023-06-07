@@ -29,4 +29,4 @@ def splitPDBQTFile(pdbqt_file):
     return idx + 1
 
 
-pdbqt_file = "/home/cewinharhar/GITHUB/reincatalyze/data/processed/docking_pred/2023_Apr_21-21_31/d27e6afc186b75c76b7fe435f4b9560b42cd14a2_ligand_2.pdbqt"
+#pdbqt_file = "/home/cewinharhar/GITHUB/reincatalyze/data/processed/docking_pred/2023_Apr_21-21_31/d27e6afc186b75c76b7fe435f4b9560b42cd14a2_ligand_2.pdbqt"

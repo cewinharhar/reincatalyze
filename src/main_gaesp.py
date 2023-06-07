@@ -30,6 +30,7 @@ from src.gaespHelpers.prepareReceptors import prepareReceptors
 from src.gaespHelpers.extractTableFromVinaOutput import extractTableFromVinaOutput
 from src.gaespHelpers.getTargetCarbonIDFromMol2File import getTargetCarbonIDFromMol2File
 from src.gaespHelpers.calculateDistanceFromTargetCarbonToFe import calculateDistanceFromTargetCarbonToFe
+from src.gaespHelpers.calculateScoringFunction import calculateScoringFunction
 from src.gaespHelpers.renameAtomsFromPDB import renameAtomsFromPDB
 
 ########################################################
@@ -123,7 +124,7 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
     ps = subprocess.Popen([vina_docking],shell=True, cwd=config.vina_gpu_cuda_path, stdout=subprocess.PIPE,stderr=subprocess.STDOUT) #ADDING CWD IS CRUCIAL FOR THIS TO WORK
 
     try:
-        print("commuinicate cuda cmd")
+        #print("commuinicate cuda cmd")
         #signal.signal(signal.SIGALRM, handle_timeout)
         #signal.alarm(timeOut) #only run as long as timeout is given. if time passed try again and then skip
         try:
@@ -182,17 +183,17 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
             ps = subprocess.Popen([splitDockRes],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
             stdout, stderr = ps.communicate()
             print("split to pdb")
-            #print(stdout)
+            
             obabelTrans = f"""obabel {ligandOutPath} -O {ligandOutPath.replace(".pdbqt", "_.pdb")} -m"""
             ps = subprocess.Popen([obabelTrans],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
             stdout, stderr = ps.communicate()
-            #print(stdout)
+            
             print("rename")
             #rename the pdb files so that we can work with the alignment for the scoring function
             dir_ = pj(config.data_dir, "processed", "docking_pred", config.runID)
-            print(dir_)
+            #print(dir_)
             file_names = [file_name for file_name in os.listdir(dir_) if file_name.startswith(mutID) and file_name.endswith(".pdb")]
-            print(file_names)
+            #print(file_names)
             for name in file_names:
                 renameAtomsFromPDB(pdb_filename = pj(dir_, name), 
                                    pdb_output = pj(dir_, name.replace(".pdb", "X.pdb")))
@@ -211,6 +212,32 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
     #split the files into individual mol2 files
         nrOfVinaPred = splitPDBQTFile(pdbqt_file=ligandOutPath)
 
+    #-------------------------------
+    #------ Scoring function ---------
+    #TODO change hardcoded values
+    dir_ = pj(config.data_dir, "processed", "docking_pred", config.runID)
+    #print(dir_)
+    file_names = [file_name for file_name in os.listdir(dir_) if file_name.startswith(mutID) and file_name.endswith("X.pdb")]
+    print(f"Input for scoring function: \n {file_names}")
+    #print(file_names)
+    rmsdScoringFunction = []
+    for idx, target_ligand_pdb in enumerate(file_names):
+        print(f"working on: {target_ligand_pdb}")
+        try:
+            rmsd = calculateScoringFunction(
+            reference_pdb       = mutantClass_.reference, #"data/raw/reference/reference.pdb",
+            reference_ligand_pdb= mutantClass_.reference_ligand, #"data/raw/reference/reference_ligandX.pdb",
+            referenceResidues   = [210, 268, 212],
+            target_protein_pdb  = mutantClass_.generationDict[generation][mutID]["structurePath"],
+            target_ligand_pdb   = pj(dir_, target_ligand_pdb),  
+            targetResidues      = [167, 225, 169],
+            output              = mutantClass_.generationDict[generation][mutID]["structurePath"].replace(".pdb", f"gen{generation}_ep{episode}_{idx}_superimposed.pdb")
+            )
+            rmsdScoringFunction.append(rmsd)
+        except Exception as err:
+            print(err)
+        print(f"RMSD for {target_ligand_pdb}: \n {rmsd}")
+        
     #-------------------------------
     #------ Distance to FE ---------
     distances = calculateDistanceFromTargetCarbonToFe(

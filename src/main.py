@@ -61,6 +61,8 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
                   #gaespConfig
                   wildTypeAASeq: str = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA", 
                   wildTypeStructurePath: str = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo_relaxed.pdb",
+                  reference: str = "data/raw/reference/reference.pdb",
+                  reference_ligand: str = "data/raw/reference/reference_ligandX.pdb",
                   thread: int = 8192, 
                   num_modes: int = 5, 
                   boxSize:int = 20, 
@@ -185,6 +187,8 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
         wildTypeAASeq           = wildTypeAASeq,
         wildTypeAAEmbedding     = wildType_embedding,
         wildTypeStructurePath   = wildTypeStructurePath,
+        reference               = reference,
+        reference_ligand        = reference_ligand,
         ligand_df               = config.ligand_df
     )
     #relax the wildtype structure #TODO reactivate, change wildTypeStructurePath to real structure
@@ -456,7 +460,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
         log_running_reward += current_ep_reward
         log_running_episodes += 1
 
-        #i_episode += 1
+        #i_episode += 1 
         generation += 1
 
     log_f.close()        

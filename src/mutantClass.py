@@ -24,10 +24,13 @@ class ConfigObjEncoder(JSONEncoder):
         return super().default(obj)
     
 class mutantClass:
-    def __init__(self, runID: str, wildTypeAASeq: str, wildTypeAAEmbedding: np.array, wildTypeStructurePath : str, ligand_df : DataFrame):
+    def __init__(self, runID: str, wildTypeAASeq: str, wildTypeAAEmbedding: np.array, wildTypeStructurePath : str, reference : str, reference_ligand : str, ligand_df : DataFrame):
         self.runID = runID
         self.wildTypeAASeq = wildTypeAASeq
         self.wildTypeAAEmbedding = wildTypeAAEmbedding
+        self.reference = reference
+        self.reference_ligand = reference_ligand
+
     
         #check if base structure is CIF or not
         if wildTypeStructurePath.endswith(".cif"):
@@ -117,13 +120,16 @@ class mutantClass:
             )
 
         elif mutationApproach.lower() == "pyrosetta":
-            mutateProteinPyrosetta(
-                mutations               = mutationList,
-                amino_acid_sequence     = self.wildTypeAASeq, #this is just to check if correct mutations List
-                source_structure_path   = sourceStructure,
-                target_structure_path   = mutantStructurePath,
-                nrOfNeighboursToRelax   = 2
-            )
+            try: mutateProteinPyrosetta(
+                    mutations               = mutationList,
+                    amino_acid_sequence     = self.wildTypeAASeq, #this is just to check if correct mutations List
+                    source_structure_path   = sourceStructure,
+                    target_structure_path   = mutantStructurePath,
+                    nrOfNeighboursToRelax   = 2
+                )
+            except Exception as err:
+                #print("error in mutantClass>addMutant>pyrosetta mutationapproach")
+                print(err)
 
 
         # create subdict of mutant with AAseq and mutated residuals
