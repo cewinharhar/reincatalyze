@@ -1,0 +1,1 @@
+scp cewinharhar@neuron:/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/2023-Jun-08-0949_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec05_g099_lra9e-4_lrc1e-3/a991e05863b38587be5f018959c733685726fb49_gen3_ep6_4_superimposed.pdb E:/
