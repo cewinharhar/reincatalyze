@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from copy import deepcopy
+import os
 
 class PPO:
     """
@@ -167,6 +168,15 @@ class PPO:
         self.clearBuffer()            
 
     def save(self, checkpoint_path):
+
+        parent_directory = os.path.dirname(checkpoint_path)
+
+        if not os.path.exists(parent_directory):
+            os.makedirs(parent_directory)
+            print(f"Created parent directory: {parent_directory}")
+        else:
+            print(f"Parent directory already exists: {parent_directory}")
+
         torch.save(self.policy_old.state_dict(), checkpoint_path)
    
     def load(self, checkpoint_path):

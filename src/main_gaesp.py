@@ -82,8 +82,9 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
     print(f"Docking ligand {ligandNr + 1}/{len(config.ligand_df)}", end = "\r")
 
     #define output path for ligand docking results
-    ligandOutPath = pj(config.data_dir, "processed", "docking_pred", config.runID, f"{mutID}_ligand_{str(ligandNr+1)}.{config.output_formate}")
-
+    ligandOutPath = pj(config.data_dir, "processed",  "docking_pred", config.runID, f"{mutID}_gen{generation}_ep{episode}_ligand_{str(ligandNr+1)}.{config.output_formate}")
+    
+    print(f"LigandOutputPath: {ligandOutPath}")
     if dockingTool.lower() == "vinagpu":
         #you could add --exhaustiveness 32 for more precise solution
         vina_docking=f"./Vina-GPU --receptor {receptor} --ligand {ligand4Cmd} --thread {config.thread}\
@@ -193,8 +194,8 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
             #rename the pdb files so that we can work with the alignment for the scoring function
             dir_ = pj(config.data_dir, "processed", "docking_pred", config.runID)
             #print(dir_)
-            file_names = [file_name for file_name in os.listdir(dir_) if file_name.startswith(mutID) and file_name.endswith(".pdb")]
-            #print(file_names)
+            file_names = [file_name for file_name in os.listdir(dir_) if file_name.startswith(f"{mutID}_gen{generation}_ep{episode}") and file_name.endswith(".pdb")]
+            #print(f"splitting: {file_names}")
             for name in file_names:
                 renameAtomsFromPDB(pdb_filename = pj(dir_, name), 
                                    pdb_output = pj(dir_, name.replace(".pdb", "X.pdb")))
@@ -218,9 +219,9 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
     #TODO change hardcoded values
     dir_ = pj(config.data_dir, "processed", "docking_pred", config.runID)
     #print(dir_)
-    file_names = [file_name for file_name in os.listdir(dir_) if file_name.startswith(mutID) and file_name.endswith("X.pdb")]
+    file_names = [file_name for file_name in os.listdir(dir_) if file_name.startswith(f"{mutID}_gen{generation}_ep{episode}") and file_name.endswith("X.pdb")]
     #print(f"Input for scoring function: \n {file_names}")
-    #print(file_names)
+    print(f"scoring: {file_names}")
     rmsdScoringFunction = []
     for idx, target_ligand_pdb in enumerate(file_names):
         #print(f"working on: {target_ligand_pdb}")
@@ -254,7 +255,7 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
 
     vinaOutput["distTargetCarbonToFE"] = distances
     
-    print(f" \n Docking successfull!! \n \n {vinaOutput}")  
+    print(f" \n Vina-GPU+ output: \n \n {vinaOutput}")  
     print(f"Number of results: {nrOfVinaPred}")    
 
     #save results in corresponding mutantclass subdict
