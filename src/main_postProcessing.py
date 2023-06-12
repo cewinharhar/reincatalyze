@@ -6,14 +6,16 @@ import seaborn as sns
 import os
 from os.path import join as pj
 
-def plotRewardByGeneration(filepath, x_label='Generation', y_label='Reward', title='Reward vs Generation', window_size=3, yTop = None, fileName : str = None):
+def plotRewardByGeneration(filepath, x_label='Generation', y_label='Reward', title='Reward vs Generation', window_size=100, yTop = None, fileName : str = None):
     # Read the CSV file with pandas
     data = pd.read_csv(filepath)
 
     # Calculate the rolling mean with the specified window size
-    data['reward_smooth_ws5'] = data['reward'].rolling(window=5, min_periods=1).mean()
-    data['reward_smooth_ws10'] = data['reward'].rolling(window=10, min_periods=1).mean()
-    data['reward_smooth'] = data['reward'].rolling(window=window_size, min_periods=1).mean()
+    nam1 = int(len(data) * 0.1)
+    nam2 = int(len(data) * 0.05)
+    data[f'reward_smooth_ws{window_size}'] = data['reward'].rolling(window=window_size, min_periods=1).mean()
+    data[f'reward_smooth_ws{nam1}'] = data['reward'].rolling(window= nam1, min_periods=1).mean()
+    data[f'reward_smooth_ws{nam2}'] = data['reward'].rolling(window=nam2, min_periods=1).mean()
 
     # Create a professional-looking plot using seaborn
     sns.set_theme(style='whitegrid')
@@ -21,9 +23,9 @@ def plotRewardByGeneration(filepath, x_label='Generation', y_label='Reward', tit
     # Set up the main plot
     plt.figure(figsize=(24, 6))
     _ = sns.lineplot(x='generation', y='reward', data=data, label='Reward')
-    _ = sns.lineplot(x='generation', y='reward_smooth', data=data, label=f'Smoothed Reward ws{window_size}', linestyle='--')
-    _ = sns.lineplot(x='generation', y='reward_smooth_ws5', data=data, label=f'Smoothed Reward ws{5}', linestyle='--')
-    _ = sns.lineplot(x='generation', y='reward_smooth_ws10', data=data, label=f'Smoothed Reward ws{10}', linestyle='--')
+    _ = sns.lineplot(x='generation', y=f'reward_smooth_ws{window_size}', data=data, label=f'Smoothed Reward ws{window_size}', linestyle='--')
+    _ = sns.lineplot(x='generation', y=f'reward_smooth_ws{nam1}', data=data, label=f'Smoothed Reward ws{nam1}', linestyle='--')
+    _ = sns.lineplot(x='generation', y=f'reward_smooth_ws{nam2}', data=data, label=f'Smoothed Reward ws{nam2}', linestyle='--')
 
     # Set labels and title
     _ = plt.xlabel(x_label)
@@ -31,7 +33,7 @@ def plotRewardByGeneration(filepath, x_label='Generation', y_label='Reward', tit
     _ = plt.title(title)
 
     # Set the y-axis limit to start at 0
-    _ = plt.ylim(bottom=0)    
+    _ = plt.ylim(bottom=-20)    
     if yTop:
         _ = plt.ylim(top=yTop)    
 

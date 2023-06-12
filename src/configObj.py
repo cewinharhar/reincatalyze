@@ -40,13 +40,17 @@ class configObj:
         output_formate="pdbqt",
         # nr of states
         num_modes=5,
+        #boxSize
+        boxSize=20,
+        seed = 13,
         # patients
         exhaustiveness=3,
         # How different do the states have to be to be "different"
         energy_range=3,
-        #boxSize
-        boxSize=20,
-        seed = 13
+        #the center for get neighbors 4localMutation
+        proteinCenter4localMutation = None,
+        #only take the AA's which are x angstrom away from the defined center 4localMutation
+        neighborDistanceFromCenter4localMutation = None,
     ):
         self.runID = runID
         self.working_dir = working_dir
@@ -73,7 +77,8 @@ class configObj:
         self.exhaustiveness=exhaustiveness
         self.boxSize = boxSize
         self.energy_range=energy_range
-
+        self.proteinCenter4localMutation = proteinCenter4localMutation
+        self.neighborDistanceFromCenter4localMutation = neighborDistanceFromCenter4localMutation
 
         #create paths if not already exist
         for pa in ["3D_pred", "docking_pred"]:

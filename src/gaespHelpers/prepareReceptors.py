@@ -52,9 +52,6 @@ def prepareReceptors(runID: str, generation: int, episode: int, mutID : str, mut
         ps = subprocess.Popen([command],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)  
         stdout,stderr = ps.communicate()
 
-        #print(stdout)
-        #print(stderr)
-        #print(stdout)
         if stderr != None:
             print(stderr,'error')
 
