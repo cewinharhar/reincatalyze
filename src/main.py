@@ -27,6 +27,7 @@ from src.mainHelpers.prepare4APIRequest import prepare4APIRequest
 from src.mainHelpers.deepMutRequest import deepMutRequest
 from src.mainHelpers.embeddingRequest import embeddingRequest
 from src.mainHelpers.saveConfigAndMutantsAsPickle import saveConfigAndMutantsAsPickle
+from src.mainHelpers.selectNeighborResidues import selectNeighborResidues
 
 from src.residoraHelpers.convNet import convNet
 from src.residoraHelpers.ActorCritic import ActorCritic
@@ -58,6 +59,8 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
                   autoDockScript_path: str = "/home/cewinharhar/GITHUB/AutoDock-Vina/example/autodock_scripts", 
                   metal_containing: bool = True, 
                   ligandNr: int = 1,
+                  proteinCenter4localMutation : str = None,
+                  neighborDistanceFromCenter4localMutation : float = None,
                   #gaespConfig
                   wildTypeAASeq: str = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA", 
                   wildTypeStructurePath: str = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo_relaxed.pdb",
@@ -135,7 +138,10 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
         num_modes       = num_modes, #number of poses that are beeing predicted    
         boxSize         = boxSize,        
         seed            = gaespSeed,
-        exhaustiveness  = exhaustiveness
+        exhaustiveness  = exhaustiveness,
+        proteinCenter4localMutation                 = proteinCenter4localMutation,
+        neighborDistanceFromCenter4localMutation    = neighborDistanceFromCenter4localMutation
+
     )
     #------------------------------------------------
     #------------  LIGANDS  -------------------------
@@ -195,6 +201,20 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
     #mutants.relaxWildType(max_iter = 200)
 
     #------------------------------------------------
+    #------------  Action Space  ------------------------
+    if not neighborDistanceFromCenter4localMutation:
+        action_dim = len(mutants.wildTypeAASeq)
+    else:
+        res_dict, action_dim, resIdList = selectNeighborResidues(
+            pdb_file        = mutants.wildTypeStructurePath,
+            ligandPath      ="/home/cewinharhar/GITHUB/reincatalyze/data/processed/ligands/ligand_Dulcinyl.pdbqt",
+            center          = config.proteinCenter4localMutation,
+            center_radius   = config.neighborDistanceFromCenter4localMutation
+        )
+
+
+
+    #------------------------------------------------
     #---------  RESIDORA CONFIG  --------------------
 
     log_dir_residora = pj(working_dir, "log/residora")
@@ -208,11 +228,14 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
     checkpoint_path = pj(model_dir, f"residora_{runID}.pth")
     print("save checkpoint path : " + checkpoint_path)
 
+
+
+
     #-------------------------
     residoraConfig = dict(
         log_dir         = log_dir_residora,
         state_dim       = np.array(embedder("")).shape[2], #the output shape of the embedder
-        action_dim      = len(mutants.wildTypeAASeq),
+        action_dim      = action_dim,
         max_ep_len      = max_ep_len,                    # max timesteps in one episode
         max_training_timesteps = max_training_timesteps,   # break training loop if timeteps > max_training_timesteps
         print_freq      = max_ep_len * 4,     # print avg reward in the interval (in num timesteps)
@@ -473,8 +496,8 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
     # ----------- PostProcess --------------
     plotRewardByGeneration(filepath = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 
                             title="Reward over generations",
-                            window_size = 20, 
-                            yTop = 300,
+                            window_size = 100, 
+                            yTop = 200,
                             fileName="generationVsReward.png")
     
     plotMutationBehaviour(filepath  = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 
