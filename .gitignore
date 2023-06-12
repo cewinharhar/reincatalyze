@@ -93,6 +93,8 @@ target/
 #JSON
 *.json
 
+#MOL
+*.mol
 
 
 # Data and models
