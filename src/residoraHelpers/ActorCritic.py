@@ -5,7 +5,7 @@ from torch.distributions import Categorical
 from typing import List
 
 from copy import deepcopy
-
+ 
 from src.residoraHelpers.convNet import convNet
 
 class ActorCritic(nn.Module):
@@ -128,7 +128,13 @@ class ActorCritic(nn.Module):
             actions = dist.sample_n(self.multiAction)
             actionLogProbs = dist.log_prob(actions)
             stateVal = self.critic(embedding)
-            return actions.detach(), actionLogProbs.detach(), stateVal.detach()
+
+            # Take the average of the log probabilities and state values
+            #TODO taking the mean of the lobProbs implies that all actions are equally important. You should consider that when working
+            avgActionLogProb = actionLogProbs.mean()
+            avgStateVal = stateVal.mean()
+
+            return actions.detach(), avgActionLogProb.detach(), avgStateVal.detach()
         
         else: #single action
             action = dist.sample() #take one action of the prob distribution
@@ -137,6 +143,7 @@ class ActorCritic(nn.Module):
             stateVal = self.critic(embedding)
 
             return action.detach(), actionLogProb.detach(), stateVal.detach()
+
     
     def evaluate(self, embedding_, action):  #also called select_action
         """ 

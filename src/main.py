@@ -63,7 +63,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
                   neighborDistanceFromCenter4localMutation : float = None,
                   #gaespConfig
                   wildTypeAASeq: str = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA", 
-                  wildTypeStructurePath: str = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo_relaxed.pdb",
+                  wildTypeStructurePath: str = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo_relaxed_metal.pdb",
                   reference: str = "data/raw/reference/reference.pdb",
                   reference_ligand: str = "data/raw/reference/reference_ligandX.pdb",
                   thread: int = 8192, 
@@ -75,6 +75,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
                   #pyroprolexConfig
                   mutationApproach: str = "pyrosetta",
                   #residoraConfig
+                  multiAction: int = 3,
                   max_ep_len: int = 5, 
                   max_training_timesteps: int = 50, 
                   save_model_freq: int = 25, 
@@ -204,13 +205,17 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
     #------------  Action Space  ------------------------
     if not neighborDistanceFromCenter4localMutation:
         action_dim = len(mutants.wildTypeAASeq)
+        residoraResMap = dict(zip(range(action_dim), range(action_dim)))
     else:
         res_dict, action_dim, resIdList = selectNeighborResidues(
             pdb_file        = mutants.wildTypeStructurePath,
+            #ligandPath can be removed then the selected docking ligand will be taken
             ligandPath      ="/home/cewinharhar/GITHUB/reincatalyze/data/processed/ligands/ligand_Dulcinyl.pdbqt",
             center          = config.proteinCenter4localMutation,
             center_radius   = config.neighborDistanceFromCenter4localMutation
         )
+        resIdList.sort()
+        residoraResMap = dict(zip(range(action_dim), resIdList))
 
 
 
@@ -227,9 +232,6 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
 
     checkpoint_path = pj(model_dir, f"residora_{runID}.pth")
     print("save checkpoint path : " + checkpoint_path)
-
-
-
 
     #-------------------------
     residoraConfig = dict(
@@ -342,7 +344,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
             print("-------------------------------")
             
             # select action with policy
-            action = ppo_agent.select_action_exploitation(state) #action starts at 0 and goes up to the len-1 of the target
+            action_ = ppo_agent.select_action_exploitation(state) #action starts at 0 and goes up to the len-1 of the target
 
             #-----------------------------------------
             # -------------  DeepMut -----------------
@@ -360,6 +362,8 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
             #                top_k               = 3
             #    )
             #TODO watch out that the mean Embedding doesnt carry other embeddings for multi site mutations
+            #map the residora output 
+            action = residoraResMap.get(action_)
             predictedAA, predictedSeq   = esm2_getPred(classifier = classifier, sequence = seq, residIdx = [action])
 
             #---------------------------------------
@@ -377,7 +381,6 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
             meanEmbedding = esm2_getEmbedding(predictedSeq[idx], embedder=embedder) 
             #---------------------------------------------------------------------------------------------------
             #----Inlcudes: Mutation and the addition of the newly generated mutants in the mutantcClass dict----
-
             mutationList = [(action, seq[action], mutAA)]
 
             print(f"mutationList: {mutationList}")
@@ -385,7 +388,6 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
             #update state and seq
             state   = deepcopy(meanEmbedding)
             seq     = predictedSeq[idx]
-
 
             #pprint(mutants.generationDict, indent = 4)
             #------------------------------------------------------------------------------------------
@@ -516,7 +518,6 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
 
 if __name__ == "__main__":
 
-    #FèGE ALLES IN MAIN FUNCTION
     import yaml
     import argparse
     from pprint import pprint

@@ -31,7 +31,7 @@ class PPO:
         #storage for values in Buffer
         self.actions = []
         self.states = []
-        self.logProbs = []
+        self.logProbs = [] 
         self.rewards = []
         self.stateValues = []
         self.isTerminals = []
@@ -87,7 +87,10 @@ class PPO:
         self.logProbs.append(actionLogProb)
         self.stateValues.append(StateVal)
 
-        return action.item()
+        if len(action) > 1:
+            return action[0].item()
+        else:
+            return action.item()
     
     def update(self):
         """

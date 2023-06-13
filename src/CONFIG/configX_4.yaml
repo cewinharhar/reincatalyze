@@ -27,6 +27,7 @@ config1:
     mutationApproach: pyrosetta
   
   residoraConfig:
+    multiAction: 3              # how many position at once should deepMut introduce
     max_ep_len: 10               #max timesteps in one episode
     max_training_timesteps: 1000  # break training loop if timeteps > max_training_timesteps
     save_model_freq: 25         # save model frequency (in num timesteps)
