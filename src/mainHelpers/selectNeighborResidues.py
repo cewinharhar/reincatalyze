@@ -25,7 +25,6 @@ def selectNeighborResidues(pdb_file:str, center : str, center_radius : float, me
     # Load the pdb file using Bio.PDB's parser
     parser = PDBParser()
 
-
     # Choose center approach:
     if center.lower() == "e":
         structure = parser.get_structure('protein', pdb_file)
@@ -94,7 +93,7 @@ def selectNeighborResidues(pdb_file:str, center : str, center_radius : float, me
         # Update dictionary
         res_dict[res_id] = {'residue': res_id, 'aa': res_name, 'dist': dist}
 
-    return res_dict, len(res_dict), resIdList
+    return res_dict, len(res_dict), list(res_dict.keys())
 
 #///////////////////////////////////////////////////////////////////////////////////////////
 

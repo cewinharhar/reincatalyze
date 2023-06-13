@@ -190,7 +190,7 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
             ps = subprocess.Popen([obabelTrans],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
             stdout, stderr = ps.communicate()
             
-            print("rename")
+            #print("rename")
             #rename the pdb files so that we can work with the alignment for the scoring function
             dir_ = pj(config.data_dir, "processed", "docking_pred", config.runID)
             #print(dir_)
@@ -221,7 +221,7 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
     #print(dir_)
     file_names = [file_name for file_name in os.listdir(dir_) if file_name.startswith(f"{mutID}_gen{generation}_ep{episode}") and file_name.endswith("X.pdb")]
     #print(f"Input for scoring function: \n {file_names}")
-    print(f"scoring: {file_names}")
+    #print(f"scoring: {file_names}")
     rmsdScoringFunction = []
     for idx, target_ligand_pdb in enumerate(file_names):
         #print(f"working on: {target_ligand_pdb}")
