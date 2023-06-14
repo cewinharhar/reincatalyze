@@ -81,16 +81,13 @@ class PPO:
             embedding = torch.FloatTensor(embedding).to(self.device)
             action, actionLogProb, StateVal = self.policy_old.select_action_exploration(embedding)
 
+        print(f"PPO>select_action_exploitation\n action: {action} \n actionLogProb: {actionLogProb} \n StateVal: {StateVal}" )
         #save the values in the buffer
         self.states.append(embedding)
         self.actions.append(action)
         self.logProbs.append(actionLogProb)
         self.stateValues.append(StateVal)
-
-        if len(action) > 1:
-            return action[0].item()
-        else:
-            return action.item()
+        return action.tolist()
     
     def update(self):
         """
@@ -125,7 +122,14 @@ class PPO:
 
         # convert list to tensor
         old_states = torch.squeeze(torch.stack(self.states, dim=0)).detach().to(self.device)
-        old_actions = torch.squeeze(torch.stack(self.actions, dim=0)).detach().to(self.device)
+
+        if isinstance(self.actions[0], torch.Tensor):
+            old_actions = torch.squeeze(torch.stack(self.actions, dim=0)).detach().to(self.device)
+        else:
+            print("PPO>update>olc_actions multi action")
+            old_actions = torch.stack([torch.stack(a) for a in self.actions]).detach().to(self.device)
+            print(old_actions)
+
         old_logProbs = torch.squeeze(torch.stack(self.logProbs, dim=0)).detach().to(self.device)
         old_stateValues = torch.squeeze(torch.stack(self.stateValues, dim=0)).detach().to(self.device)
 
