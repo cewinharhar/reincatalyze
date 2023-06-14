@@ -113,6 +113,13 @@ def mutation_summary(filepath: str, output_filename=None):
 
     return summary_table
 
+if __name__ == "__main__":
+
+    plotRewardByGeneration(
+        filePath = r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\REINCA~1\log\residora\206199~1\2023-J~2.CSV",
+        fileName = 
+    )
+
 """ # Example usage
 summary_table = mutation_summary('log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07_timestep.csv', 
                                  output_filename='mutation_summary.csv')
