@@ -125,16 +125,22 @@ class ActorCritic(nn.Module):
 
         # TODO finish the multi Action approach
         if self.multiAction:
-            actions = dist.sample_n(self.multiAction)
-            actionLogProbs = dist.log_prob(actions)
-            stateVal = self.critic(embedding)
+            try:
+                actions = dist.sample((self.multiAction,))
+                print(f"Printing ActorCritic>select_action_exploration>actions \n {actions}")
+                actionLogProbs = dist.log_prob(actions)
+                stateVal = self.critic(embedding)
 
-            # Take the average of the log probabilities and state values
-            #TODO taking the mean of the lobProbs implies that all actions are equally important. You should consider that when working
-            avgActionLogProb = actionLogProbs.mean()
-            avgStateVal = stateVal.mean()
+                # Take the average of the log probabilities and state values
+                #TODO taking the mean of the lobProbs implies that all actions are equally important. You should consider that when working
+                avgActionLogProb = actionLogProbs.mean()
+                avgStateVal = stateVal.mean()
 
-            return actions.detach(), avgActionLogProb.detach(), avgStateVal.detach()
+                print(f"avgActionLogProb: {avgActionLogProb} \n avgStateVal: {avgStateVal}")
+
+                return actions.detach(), avgActionLogProb.detach(), avgStateVal.detach()
+            except Exception as err: 
+                print(err)
         
         else: #single action
             action = dist.sample() #take one action of the prob distribution

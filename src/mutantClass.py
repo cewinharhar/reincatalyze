@@ -77,29 +77,19 @@ class mutantClass:
         
         :param mutationApproach = either pyrosetta or pymol
         """
-        assert isinstance(generation, int)
-        assert isinstance(AASeq, str)
+        assert isinstance(generation, int), "addMutant> generation is not in"
+        assert isinstance(AASeq, str), "addMutant> AASeq is not str"
 
         if not self.generationDict.get(generation):
             # add dict to generation X
             self.generationDict[generation] = {}
-
-        #TODO remove
-        if not pyrosettaRelaxConfig:
-            pyrosettaRelaxConfig = dict(
-                globalRelax = False,
-                nrOfResiduesDownstream  = 1,
-                nrOfResiduesUpstream    = 1,
-                metalResidueName        = ["FE2"],
-                cofactorResidueName     = ["AKG"],
-                max_iter                = 3
-            )            
+        
             
         # hash AAseq of mutant to use as key
         mutID = hashlib.sha1(AASeq.encode()).hexdigest()
         # add id to overview ID list
         self.mutIDListAll.append(mutID)
-
+        print("mutantClass>hashed mutID")
         #---------------------------------------------------
         #----Add the mutations to the wildtype structure----
         mutantStructurePath = pj(mutantStructurePath, mutID+".pdb")
@@ -110,7 +100,7 @@ class mutantClass:
             sourceStructure = self.wildTypeStructurePath
         else:
             sourceStructure = self.generationDict[generation][sourceStructure]["structurePath"]
-
+        
         if mutationApproach.lower() == "pymol":
             mutateProteinPymol(
                 mutations               = mutationList,

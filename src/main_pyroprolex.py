@@ -19,11 +19,11 @@ def mutateProteinPyrosetta(mutations : List[Tuple], amino_acid_sequence : str, s
     #init pyrosetta and mute all the unnecessary output
 
     #Sanity Check
-    for idx, original_aa, target_aa in mutations:
-        if amino_acid_sequence[idx] != original_aa:
-            print(f"Warning: The amino acid at position {idx} is not {original_aa} as specified in the mutation list.")
-            print("Probable cause: Same residue was mutated before in the same generation.\nIgnore warning..")
-            print(f"AASeq: {amino_acid_sequence}")
+    #for idx, original_aa, target_aa in mutations:
+    #    if amino_acid_sequence[idx] != original_aa:
+    #        print(f"Warning: The amino acid at position {idx} is not {original_aa} as specified in the mutation list.")
+    #        print("Probable cause: Same residue was mutated before in the same generation.\nIgnore warning..")
+    #        print(f"AASeq: {amino_acid_sequence}")
             #raise Exception
 
     #Scorefunction
@@ -38,9 +38,9 @@ def mutateProteinPyrosetta(mutations : List[Tuple], amino_acid_sequence : str, s
     #-------------------------------------------------------------
     #------ Introduce mutation with local relaxation -------------
     mutation_position, old_residue, new_residue = mutations[0]
-
+    print("before pyrostte muat")
     pyrosetta.toolbox.mutate_residue(pose, 
-                                     mutation_position + 1,  #because starts with 1
+                                     [mutPos + 1 for mutPos in mutation_position],  #because starts with 1
                                      new_residue, 
                                      pack_radius=nrOfNeighboursToRelax, #how many AA down and upstream from mutation side should be relaxed
                                      pack_scorefxn=scorefxn)    

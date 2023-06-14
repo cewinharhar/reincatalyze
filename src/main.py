@@ -238,6 +238,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
         log_dir         = log_dir_residora,
         state_dim       = np.array(embedder("")).shape[2], #the output shape of the embedder
         action_dim      = action_dim,
+        multiAction     = multiAction,
         max_ep_len      = max_ep_len,                    # max timesteps in one episode
         max_training_timesteps = max_training_timesteps,   # break training loop if timeteps > max_training_timesteps
         print_freq      = max_ep_len * 4,     # print avg reward in the interval (in num timesteps)
@@ -267,6 +268,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
     actorCritic = ActorCritic(
         state_dim   = residoraConfig["state_dim"],
         action_dim  = residoraConfig["action_dim"],
+        multiAction = residoraConfig["multiAction"],
         lr_actor    = residoraConfig["lr_actor"],
         lr_critic   = residoraConfig["lr_critic"],
         nrNeuronsInHiddenLayers = residoraConfig["nrNeuronsInHiddenLayers"],
@@ -345,7 +347,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
             
             # select action with policy
             action_ = ppo_agent.select_action_exploitation(state) #action starts at 0 and goes up to the len-1 of the target
-
+            print(f"Action worked: {action_}")
             #-----------------------------------------
             # -------------  DeepMut -----------------
             #INIT WITH WILDTYPE
@@ -363,8 +365,10 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
             #    )
             #TODO watch out that the mean Embedding doesnt carry other embeddings for multi site mutations
             #map the residora output 
-            action = residoraResMap.get(action_)
-            predictedAA, predictedSeq   = esm2_getPred(classifier = classifier, sequence = seq, residIdx = [action])
+            action = [residoraResMap.get(actionIter) for actionIter in action_]
+            print(f"main>action: {action}")
+            predictedAA   = esm2_getPred(classifier = classifier, sequence = seq, residIdx = action)
+            originalAA    = [target for idx, target in enumerate(seq) if idx in action]
 
             #---------------------------------------
             #------------ embeddings ---------------
@@ -372,22 +376,26 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
             #TODO decide wether to always choose first option
             #iterate over the predicted AA's (first ones have higher score), if the same as wildtype, skip
             for idx, AA in enumerate(predictedAA):
-                if AA != seq[action]:
+                if AA != originalAA:
                     mutAA = AA
                     break    
+
+            print(mutAA)
             #idx     = 0
             #mutAA   = predictedAA[idx]   
-
-            meanEmbedding = esm2_getEmbedding(predictedSeq[idx], embedder=embedder) 
+            embedSeq    = [AA[action.index(idx)] if idx in action else elem for idx, elem in enumerate(seq)]
+            embedSeq    = "".join(embedSeq)
+            print(embedSeq)
+            meanEmbedding = esm2_getEmbedding(embedSeq, embedder=embedder) 
             #---------------------------------------------------------------------------------------------------
             #----Inlcudes: Mutation and the addition of the newly generated mutants in the mutantcClass dict----
-            mutationList = [(action, seq[action], mutAA)]
+            mutationList = [(action, originalAA, mutAA)]
 
             print(f"mutationList: {mutationList}")
         
             #update state and seq
             state   = deepcopy(meanEmbedding)
-            seq     = predictedSeq[idx]
+            seq     = embedSeq
 
             #pprint(mutants.generationDict, indent = 4)
             #------------------------------------------------------------------------------------------
@@ -568,7 +576,7 @@ if __name__ == "__main__":
                 main_Pipeline(runID = runID, **global_config, **gaesp_config, **pyroprolex_config, **residora_config)
             except Exception as err:
                 print(err)
-                continue #go to next configuration
+                #continue #go to next configuration
 
     #------------------
     main(args.config[0])
