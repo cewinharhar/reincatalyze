@@ -90,6 +90,13 @@ target/
 # pytest cache
 .pytest_cache/
 
+#JSON
+*.json
+
+#MOL
+*.mol
+
+
 # Data and models
 data/processed/*
 models/*
