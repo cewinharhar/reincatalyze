@@ -116,8 +116,27 @@ def mutation_summary(filepath: str, output_filename=None):
 if __name__ == "__main__":
 
     plotRewardByGeneration(
-        filePath = r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\REINCA~1\log\residora\206199~1\2023-J~2.CSV",
-        fileName = 
+        filepath = "log/residora/2023-Jun-09-0316_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec05_g099_lra9e-4_lrc1e-3/2023-Jun-09-0316_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec05_g099_lra9e-4_lrc1e-3_timestep.csv",
+        fileName = "generationVsReward_extra.png",
+        yTop = 200
+    )
+
+    plotRewardByGeneration(
+        filepath = "log/residora/2023-Jun-09-1804_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc1e-3/2023-Jun-09-1804_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc1e-3_timestep.csv",
+        fileName = "generationVsReward_extra.png",
+        yTop = 200
+    )
+
+    plotRewardByGeneration(
+        filepath = "log/residora/2023-Jun-10-0707_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra3e-4_lrc1e-3/2023-Jun-10-0707_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra3e-4_lrc1e-3_timestep.csv",
+        fileName = "generationVsReward_extra.png",
+        yTop = 200
+    )
+
+    plotRewardByGeneration(
+        filepath = "log/residora/2023-Jun-11-0955_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc9e-3/2023-Jun-11-0955_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc9e-3_timestep.csv",
+        fileName = "generationVsReward_extra.png",
+        yTop = 200
     )
 
 """ # Example usage
