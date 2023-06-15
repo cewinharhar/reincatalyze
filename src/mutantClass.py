@@ -127,9 +127,9 @@ class mutantClass:
             AASeq           = AASeq, 
             embedding       = embedding, 
             mutRes          = mutRes, 
-            oldAA           = aaMap[mutationList[0][1]],
-            newAA           = aaMap[mutationList[0][2]],
-            mutation        = mutationList[0][1]+str(mutationList[0][0])+mutationList[0][2],
+            oldAA           = "_".join([aaMap[i] for i in mutationList[0][1]]),
+            newAA           = "_".join([aaMap[i] for i in mutationList[0][2]]),
+            mutation        = "_".join([mutationList[0][1][i]+str(mutationList[0][0][i])+mutationList[0][2][i] for i in range(len(mutationList[0][0]))]),
             structurePath   = mutantStructurePath, 
             structurePath4Vina="", 
             dockingResults  = self.dockingResultsEmpty
@@ -139,7 +139,7 @@ class mutantClass:
         self.generationDict[generation][mutID] = mutDict
 
         return mutID
-
+        
 
     def addDockingResult(
             self, generation : int, mutID : str,

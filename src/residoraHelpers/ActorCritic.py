@@ -1,12 +1,14 @@
 import torch.nn as nn
 from torch import manual_seed
 from torch.distributions import Categorical
-
+import torch
 from typing import List
 
 from copy import deepcopy
  
 from src.residoraHelpers.convNet import convNet
+
+import pdb
 
 class ActorCritic(nn.Module):
     """
@@ -107,6 +109,7 @@ class ActorCritic(nn.Module):
             This function calculates the action probabilities or the mean and variance of the action distribution, 
             depending on the type of action space, and then samples a new action from the distribution.
         """
+        print("ActorCritic>exploration")
         if self.useCNN:
             embedding = embedding_.unsqueeze(0).unsqueeze(0)
         else:
@@ -160,6 +163,7 @@ class ActorCritic(nn.Module):
                 - dist_entropy: A tensor containing the entropy of the action distribution. This term is included in the PPO loss function to encourage exploration, by penalizing policies that are too deterministic.
                 - state_values: A tensor containing the estimated state value of the current state under the critic network. This tensor is used in the computation of the PPO loss function.
         """
+        print(f"ACtorCritic>evaluate \n action: {action}")
         if self.useCNN:
             #permutation to tell CNN that we have batch size of 3 but still only 1 channel
             embedding   = embedding_.unsqueeze(0).permute([1,0,2])
@@ -169,6 +173,8 @@ class ActorCritic(nn.Module):
         try:
             #The probs of the actor the decide which one to mutate
             mutationProbabilities = self.actor(embedding)
+            print(f"ActorCritic>mutationProbabilities \n {mutationProbabilities}")
+            
         except Exception as err:
             print(err)
             print("-------------------------------------------------")
@@ -177,9 +183,29 @@ class ActorCritic(nn.Module):
 
         #transform probs into probability distirbution
         dist = Categorical(mutationProbabilities)
+        print(f"ActorCritic>dist \n {dist}")
+
+        #pdb.set_trace()
+
+        if len(action.shape) > 1: #in case of multi action
+            # Assuming action is a 2D tensor of shape (batch_size, 3), 
+            # where each row contains 3 sampled actions, you need to handle each of these actions separately.
+            actionLogProb = torch.zeros(action.shape[0])  # To store the log probs
+            distEntropy = torch.zeros(action.shape[0])  # To store the entropy
+            for i in range(action.shape[1]):
+                single_action = action[:, i]  # Select the i-th action from each batch
+                actionLogProb[i] = dist.log_prob(single_action)
+                distEntropy[i] = dist.entropy()
+            # Rest of the code remains same
+            stateValues = self.critic(embedding)
+
+            return actionLogProb, stateValues, distEntropy            
 
         actionLogProb   = dist.log_prob(action) # get the log prob of the decided action
+        print(f"ActorCritic>actionLogProb \n {actionLogProb}")
         distEntropy     = dist.entropy()
+        print(f"ActorCritic>distEntropy \n {distEntropy}")
         stateValues     = self.critic(embedding)
+        print(f"ActorCritic>sttateValues \n {stateValues}")
 
         return actionLogProb, stateValues, distEntropy

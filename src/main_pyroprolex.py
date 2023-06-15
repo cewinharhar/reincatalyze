@@ -38,12 +38,19 @@ def mutateProteinPyrosetta(mutations : List[Tuple], amino_acid_sequence : str, s
     #-------------------------------------------------------------
     #------ Introduce mutation with local relaxation -------------
     mutation_position, old_residue, new_residue = mutations[0]
-    print("before pyrostte muat")
-    pyrosetta.toolbox.mutate_residue(pose, 
-                                     [mutPos + 1 for mutPos in mutation_position],  #because starts with 1
-                                     new_residue, 
-                                     pack_radius=nrOfNeighboursToRelax, #how many AA down and upstream from mutation side should be relaxed
-                                     pack_scorefxn=scorefxn)    
+
+    if not isinstance(mutation_position, list):
+        mutation_position   = [mutation_position]
+        new_residue         = [new_residue]
+
+    for singleMutationPosition, singleMutationResidue in zip(mutation_position, new_residue):
+
+        #print("before pyrostte muat")
+        pyrosetta.toolbox.mutate_residue(pose, 
+                                        singleMutationPosition + 1,  #because starts with 1
+                                        singleMutationResidue, 
+                                        pack_radius=nrOfNeighboursToRelax, #how many AA down and upstream from mutation side should be relaxed
+                                        pack_scorefxn=scorefxn)    
     
     #update chain ID
     #update_pose_chains_from_pdb_chains
@@ -166,7 +173,7 @@ if __name__ == "__main__":
         max_iter                = 100
     )    
     amino_acid_sequence = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
-    source_structure_path = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo_relaxed.pdb"
+    source_structure_path = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo_relaxed_metal.pdb"
 
     target_structure_path_mutation = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/pyroprolex_bugHunt.pdb"
     mutateProteinPyrosetta(mutations = [(114, "L", "A")], 
@@ -187,3 +194,5 @@ if __name__ == "__main__":
         source_structure_path="/home/cewinharhar/GITHUB/reincatalyze/data/raw/ortho12_FE_oxo.pdb",
         target_structure_path="/home/cewinharhar/GITHUB/reincatalyze/data/raw/ortho12_FE_oxo_relaxed.pdb"
     )
+
+    mutations = [([166, 170, 167], ["L", "G", "C"], ["A", "V", "W"])]

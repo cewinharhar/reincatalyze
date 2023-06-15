@@ -76,7 +76,7 @@ class PPO:
         It then selects the action with the highest probability or the highest expected value, 
         depending on the action space, using the argmax() function.
         """
-
+        print("PPO>select_action_exploitation")
         with torch.no_grad():
             embedding = torch.FloatTensor(embedding).to(self.device)
             action, actionLogProb, StateVal = self.policy_old.select_action_exploration(embedding)
@@ -103,7 +103,7 @@ class PPO:
             Returns:
             None        
         """
-
+        print("PPO>updating")
         rewards = []
         discounted_reward = 0
 
@@ -141,6 +141,7 @@ class PPO:
         #-----------------------------------------------------------------------------------------------
         # Optimize the policy network for K epochs
         for kEpoch in range(self.K_epochs):
+            print("PPO>kEpoch iteration")
             #print(kEpoch)
             # Evaluating old actions and values
             #print("Update > evaluate")
@@ -169,6 +170,7 @@ class PPO:
             self.optimizer.step()
         #-----------------------------------------------------------------------------------------------
         # Copy new weights into old policy
+        print("PPO>copyNewWeightsIntoOldPolicy")
         self.policy_old.load_state_dict(self.policy.state_dict())
 
         # clear buffer

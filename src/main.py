@@ -348,6 +348,11 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
             # select action with policy
             action_ = ppo_agent.select_action_exploitation(state) #action starts at 0 and goes up to the len-1 of the target
             print(f"Action worked: {action_}")
+            #remove dublicates
+            if isinstance(action_, list):
+                action_ = list(set(action_))
+            else:
+                action_ = [action_]
             #-----------------------------------------
             # -------------  DeepMut -----------------
             #INIT WITH WILDTYPE
@@ -389,7 +394,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
             meanEmbedding = esm2_getEmbedding(embedSeq, embedder=embedder) 
             #---------------------------------------------------------------------------------------------------
             #----Inlcudes: Mutation and the addition of the newly generated mutants in the mutantcClass dict----
-            mutationList = [(action, originalAA, mutAA)]
+            mutationList = [([a for a in action], [o for o in originalAA], [m for m in mutAA])]
 
             print(f"mutationList: {mutationList}")
         
