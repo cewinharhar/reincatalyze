@@ -174,6 +174,8 @@ class ActorCritic(nn.Module):
             #The probs of the actor the decide which one to mutate
             mutationProbabilities = self.actor(embedding)
             print(f"ActorCritic>mutationProbabilities \n {mutationProbabilities}")
+            #transform probs into probability distirbution
+            dist = Categorical(mutationProbabilities)
             
         except Exception as err:
             print(err)
@@ -181,27 +183,24 @@ class ActorCritic(nn.Module):
             print("Error at ActorCritic.evaluate")
             print("-------------------------------------------------")
 
-        #transform probs into probability distirbution
-        dist = Categorical(mutationProbabilities)
-        print(f"ActorCritic>dist \n {dist}")
+        #pdb.set_trace()
 
-        pdb.set_trace()
+        if len(action.shape) > 1: 
+            actionLogProbs = []
+            for i in range(action.shape[1]):  # assuming action.shape is [batch_size, num_actions]
+                actionLogProbs.append(dist.log_prob(action[:, i]))
 
-        if len(action.shape) > 1: #in case of multi action
-            # Assuming action is a 2D tensor of shape (batch_size, 3), 
-            # where each row contains 3 sampled actions, you need to handle each of these actions separately.
-            actionLogProb = torch.zeros(action.shape[0])  # To store the log probs
-            distEntropy = torch.zeros(action.shape[0])  # To store the entropy
-            pdb.set_trace()
-            for i in range(action.shape[1]):
-                pdb.set_trace()
-                single_action = action[:, i]  # Select the i-th action from each batch
-                actionLogProb[i] = dist.log_prob(single_action)
-                distEntropy[i] = dist.entropy()
-            # Rest of the code remains same
+            actionLogProbs = torch.stack(actionLogProbs, dim=-1)            
+            
+            distEntropy = dist.entropy()
+
             stateValues = self.critic(embedding)
-
-            return actionLogProb, stateValues, distEntropy            
+            
+            # Average over actions
+            avgActionLogProb = actionLogProbs.mean(dim=1)
+            
+            #pdb.set_trace()
+            return avgActionLogProb, stateValues, distEntropy     
 
         actionLogProb   = dist.log_prob(action) # get the log prob of the decided action
         print(f"ActorCritic>actionLogProb \n {actionLogProb}")

@@ -33,7 +33,7 @@ from src.residoraHelpers.convNet import convNet
 from src.residoraHelpers.ActorCritic import ActorCritic
 from src.residoraHelpers.PPO import PPO
 
-from src.main_postProcessing import plotRewardByGeneration, plotMutationBehaviour, mutation_summary
+from src.main_postProcessing import plotRewardByGeneration, plotMutationBehaviour, mutation_summary, mutationFrequency
 
 #from src.main_deepMut import main_deepMut
 #from src.main_pyroprolex import main_pyroprolex
@@ -526,6 +526,15 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
     
     summaryTable = mutation_summary(filepath = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 
                                  output_filename='mutation_summary.csv')
+
+    try:
+        mutationFrequency(
+            filepath = pj(residoraConfig["log_dir"], runID + "_timestep.csv"),
+            fileName = "mutationFrequency.png"
+        )    
+    except:
+        print("mutFreqPlot did not work")
+            
     
     ### EXPORT MUTANTCLASS & CONFIG FILE
     mutants.export_to_json(pj(residoraConfig["log_dir"], runID + "_mutantClass.json"))
@@ -590,83 +599,3 @@ if __name__ == "__main__":
     #------------------
     main(args.config[0])
     #------------------
-
-
-"""     
-def main_Pipeline(runID: str, *configUnpack, 
-                  #globalConfig
-                  runIDExtension : str, 
-                  transformerName: str = "facebook/esm2_t6_8M_UR50D", 
-                  vina_gpu_cuda_path: str = "/home/cewinharhar/GITHUB/Vina-GPU-CUDA/Vina-GPU", 
-                  vina_path: str = "/home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64", 
-                  autoDockScript_path: str = "/home/cewinharhar/GITHUB/AutoDock-Vina/example/autodock_scripts", 
-                  metal_containing: bool = True, 
-                  ligandNr: int = 1,
-                  #gaespConfig
-                  wildTypeAASeq: str = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA", 
-                  wildTypeStructurePath: str = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo_relaxed.pdb",
-                  thread: int = 8192, 
-                  num_modes: int = 5, 
-                  boxSize:int = 20, 
-                  gaespSeed: int = 42, 
-                  exhaustiveness: int = 32,
-                  dockingTool: str = "vinagpu",
-                  #pyroprolexConfig
-                  mutationApproach: str = "pyrosetta",
-                  #residoraConfig
-                  max_ep_len: int = 5, 
-                  max_training_timesteps: int = 50, 
-                  save_model_freq: int = 25, 
-                  K_epochs: int = 50, 
-                  gamma: float = 0.99, 
-                  eps_clip: float = 0.2, 
-                  lr_actor: float = 0.0003, 
-                  lr_critic: float = 0.001, 
-                  residoraSeed: int = 13,
-                  
-                  nrNeuronsInHiddenLayer: List = [256], 
-                  activationFunction: str = "tanh", 
-                  useCNN: bool = False, 
-                  stride: int = 4, 
-                  kernel_size: int = 6,  
-                  out_channel: int = 2, 
-                  dropOutProb: float = 0.01, 
-                  residoraDevice: str = "cpu"):
-    
-    print(
-        runID,
-        runIDExtension,
-        transformerName,
-        vina_gpu_cuda_path,
-        vina_path,
-        autoDockScript_path,
-        metal_containing,
-        ligandNr,
-        wildTypeAASeq,
-        wildTypeStructurePath,
-        thread,
-        num_modes,
-        boxSize,
-        gaespSeed,
-        exhaustiveness,
-        dockingTool,
-        mutationApproach,
-        max_ep_len,
-        max_training_timesteps,
-        save_model_freq,
-        K_epochs,
-        gamma,
-        eps_clip,
-        lr_actor,
-        lr_critic,
-        residoraSeed,
-        nrNeuronsInHiddenLayer,
-        activationFunction,
-        useCNN,
-        stride,
-        kernel_size,
-        out_channel,
-        dropOutProb,
-        residoraDevice
-    ) """
- 

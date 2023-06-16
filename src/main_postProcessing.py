@@ -93,6 +93,65 @@ def plotMutationBehaviour(filepath, initialRes: List, x_label='Generation', y_la
                       addText   = False, 
                       fileName  = "mutationBehaviour") """
 
+def mutationFrequency(filepath, fileName, originalSeq = 'MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA'):
+    # Load the CSV file into a pandas DataFrame
+    df = pd.read_csv(filepath)
+
+    # Define the amino acids
+    AA = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+
+    # Filter the data where oldAA is the same as newAA
+    dfRep = df[df['oldAA'] == df['newAA']]
+
+    # Group the data by amino acid and residue, and count the frequency
+    grouped = df.groupby(['oldAA', 'mutationResidue']).size().reset_index(name='frequency')
+    groupedRep = dfRep.groupby(['oldAA', 'mutationResidue']).size().reset_index(name='frequency')
+
+    # Create a scatter plot
+    plt.figure(figsize=(30, 5))
+
+    plt.scatter(grouped['mutationResidue'], grouped['oldAA'], s=grouped['frequency'] * 5, alpha=0.4, c="b", label='Overall Frequency')
+    # Add amino acid labels and residue numbers to each bubble
+    for i, row in grouped.iterrows():
+        plt.text(row['mutationResidue'], row['oldAA'], f"{row['oldAA']}{row['mutationResidue']}", ha='center', va='center', color='black')
+
+    plt.scatter(groupedRep['mutationResidue'], groupedRep['oldAA'], s=groupedRep['frequency'] * 5, alpha=0.4, c="r", label='Old AA Same as New AA')
+    # Add amino acid labels and residue numbers to each bubble
+    for i, row in groupedRep.iterrows():
+        plt.text(row['mutationResidue'], row['oldAA'], f"{row['oldAA']}{row['mutationResidue']}", ha='center', va='center', color='black')
+
+    # Set the y-axis labels to the amino acids
+    plt.yticks(range(1, len(AA) + 1), AA)
+
+    # Set the x-axis range with padding
+    plt.xlim(0.5, 305.5)
+
+    # Set the y-axis range with padding
+    #plt.ylim(0.5, len(AA) + 0.5)
+
+    # Set labels and title
+    plt.xlabel('Residue')
+    plt.ylabel('Amino Acid')
+    plt.title('Amino Acid Frequency by Residue')
+
+    # Format x-ticks as "<residue number> <residue letter>"
+    sequence = originalSeq
+    residue_labels = [f"{i}{AA[i-1]}" for i in range(1, len(AA) + 1)]
+    xticks = [i+1 for i in range(len(sequence))]
+    plt.xticks(xticks, [f"{i} {sequence[i-1]}" for i in xticks], rotation=90, size = 7)
+
+    # Add a legend
+    plt.legend(loc = 'upper left', markerscale=0.1)
+
+    # Show the plot
+    if fileName:
+        # Save the plot in the same directory as the CSV file
+        plot_path = pj(os.path.dirname(filepath), fileName)
+        plt.savefig(plot_path, dpi = 300)
+        print(f"Plot saved at {plot_path}")
+    else:
+        plt.show()
+
 
 def mutation_summary(filepath: str, output_filename=None):
     # Read the CSV file with pandas
@@ -139,6 +198,11 @@ if __name__ == "__main__":
                       addText   = True, 
                       fileName  = "mutationBehaviour.png"
     )
+
+    mutationFrequency(
+        filepath = fp,
+        fileName = "mutationFrequencyX.png"
+    )    
 
     plotRewardByGeneration(
         filepath = "log/residora/2023-Jun-09-1804_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc1e-3/2023-Jun-09-1804_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc1e-3_timestep.csv",

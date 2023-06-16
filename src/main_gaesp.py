@@ -37,7 +37,7 @@ from src.gaespHelpers.renameAtomsFromPDB import renameAtomsFromPDB
 #                   Preparation
 ########################################################
 
-def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutantClass, config : configObj, ligandNr : int, dockingTool : str = "vinagpu", flexibelDocking : bool = True, distanceTreshold : float = 8, rmseTreshold : float = 8.0, punishment : float = -20.0, boxSize : int = 20, timeOut: int = 180):
+def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutantClass, config : configObj, ligandNr : int, dockingTool : str = "vinagpu", flexibelDocking : bool = True, distanceTreshold : float = 8, rmseTreshold : float = 6.0, punishment : float = -20.0, boxSize : int = 20, timeOut: int = 180):
     """
     Dock a ligand with a protein structure specified by its generation and mutation ID, and store the docking results in the mutantClass object.
     
@@ -275,7 +275,7 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
     #    reward = -1 * affinity * distFactor**2
     if RMSE < rmseTreshold and distance < distanceTreshold:
         
-        reward = -1*affinity * (rmseTreshold - RMSE)**2
+        reward = -1*affinity + (rmseTreshold - RMSE)**3
     else:
         reward = punishment
     #print(reward)
