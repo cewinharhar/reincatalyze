@@ -185,14 +185,16 @@ class ActorCritic(nn.Module):
         dist = Categorical(mutationProbabilities)
         print(f"ActorCritic>dist \n {dist}")
 
-        #pdb.set_trace()
+        pdb.set_trace()
 
         if len(action.shape) > 1: #in case of multi action
             # Assuming action is a 2D tensor of shape (batch_size, 3), 
             # where each row contains 3 sampled actions, you need to handle each of these actions separately.
             actionLogProb = torch.zeros(action.shape[0])  # To store the log probs
             distEntropy = torch.zeros(action.shape[0])  # To store the entropy
+            pdb.set_trace()
             for i in range(action.shape[1]):
+                pdb.set_trace()
                 single_action = action[:, i]  # Select the i-th action from each batch
                 actionLogProb[i] = dist.log_prob(single_action)
                 distEntropy[i] = dist.entropy()

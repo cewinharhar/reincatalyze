@@ -5,6 +5,7 @@ matplotlib.use('Agg')
 import seaborn as sns
 import os
 from os.path import join as pj
+from typing import List
 
 def plotRewardByGeneration(filepath, x_label='Generation', y_label='Reward', title='Reward vs Generation', window_size=100, yTop = None, fileName : str = None):
     # Read the CSV file with pandas
@@ -54,7 +55,7 @@ def plotRewardByGeneration(filepath, x_label='Generation', y_label='Reward', tit
                         fileName="test.png") """
 
 
-def plotMutationBehaviour(filepath, x_label='Generation', y_label='Mutation Position', title='Mutation Behavior', addText : bool = False, fileName : str = None):
+def plotMutationBehaviour(filepath, initialRes: List, x_label='Generation', y_label='Mutation Position', title='Mutation Behavior', addText : bool = False, fontsize : float = 7.5, fileName : str = None):
     # Read the CSV file with pandas
     data = pd.read_csv(filepath)
 
@@ -68,7 +69,10 @@ def plotMutationBehaviour(filepath, x_label='Generation', y_label='Mutation Posi
     if addText:
         # Add mutation information (oldAA -> newAA) as text labels
         for index, row in data.iterrows():
-            plt.text(row['generation'] + 0.05, row['mutationResidue'], f"{row['oldAA']}->{row['newAA']}")
+            plt.text(row['generation']-1, row['mutationResidue'], f"{row['oldAA']}>{row['newAA']}", fontsize=fontsize)
+
+    # Plot initialRes as red dots at x=0
+    plt.scatter([0] * len(initialRes), initialRes, c='red', marker='o')
 
     # Set labels and title
     plt.xlabel(x_label)
@@ -115,10 +119,25 @@ def mutation_summary(filepath: str, output_filename=None):
 
 if __name__ == "__main__":
 
+
+    fp = "log/residora/2023-Jun-15-1604_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec035_g099_lra1e-3_lrc1e-2_LOCAL_nd8_ceAp-D/2023-Jun-15-1604_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec035_g099_lra1e-3_lrc1e-2_LOCAL_nd8_ceAp-D_timestep.csv"
+    fp = "log/residora/2023-Jun-15-1608_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd8_ceAp-D/2023-Jun-15-1608_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd8_ceAp-D_timestep.csv"
+    
+    data = pd.read_csv(fp)
+    uniqueResi = list(set(data.mutationResidue.tolist()))
+
     plotRewardByGeneration(
-        filepath = "log/residora/2023-Jun-09-0316_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec05_g099_lra9e-4_lrc1e-3/2023-Jun-09-0316_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec05_g099_lra9e-4_lrc1e-3_timestep.csv",
+        filepath = fp,
         fileName = "generationVsReward_extra.png",
         yTop = 200
+    )
+
+    plotMutationBehaviour(
+        filepath=fp,
+        initialRes=uniqueResi,
+                    title     = "Mutations over generations",
+                      addText   = True, 
+                      fileName  = "mutationBehaviour.png"
     )
 
     plotRewardByGeneration(
@@ -138,6 +157,8 @@ if __name__ == "__main__":
         fileName = "generationVsReward_extra.png",
         yTop = 200
     )
+
+    filepath = "log/residora/2023-Jun-15-1604_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec035_g099_lra1e-3_lrc1e-2_LOCAL_nd8_ceAp-D/2023-Jun-15-1604_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec035_g099_lra1e-3_lrc1e-2_LOCAL_nd8_ceAp-D_timestep.csv"
 
 """ # Example usage
 summary_table = mutation_summary('log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07_timestep.csv', 

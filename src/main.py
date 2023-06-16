@@ -440,7 +440,10 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
             ppo_agent.rewards.append(reward)
             ppo_agent.isTerminals.append(residoraConfig["done"]) #TODO make done depend on the enzyme stability
             
-            log_t.write(f"{generation},{episode},{round(reward, 4)},{mutID},{mutationList[0][0]},{mutationList[0][1]},{mutationList[0][2]}\n")
+            
+            #iterate through list and add new row to log
+            for idx in range(len(mutationList[0][0])):
+                log_t.write(f"{generation},{episode},{round(reward, 4)},{mutID},{mutationList[0][0][idx]},{mutationList[0][1][idx]},{mutationList[0][2][idx]}\n")
             log_t.flush()
 
             # ---------------------
@@ -518,6 +521,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
     plotMutationBehaviour(filepath  = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 
                       title     = "Mutations over generations",
                       addText   = True, 
+                      initialRes = resIdList,
                       fileName  = "mutationBehaviour.png")
     
     summaryTable = mutation_summary(filepath = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 
