@@ -46,7 +46,8 @@ def prepareReceptors(runID: str, generation: int, episode: int, mutID : str, mut
         outFile = mutantClass_.generationDict[generation][mutID]["structurePath"].replace(replaceStr, tmp)
 
         command = f'~/ADFRsuite-1.0/bin/prepare_receptor -r {mutantClass_.generationDict[generation][mutID]["structurePath"]} \
-                    -o {outFile} -A hydrogens -v -U nphs_lps_waters'  # STILL NEED TO FIGURE OUT HOW TO ACCEPT ALPHAFILL DATA
+                    -o {outFile} -A hydrogens -v -U nphs_lps_waters'
+                
 
         #run command
         ps = subprocess.Popen([command],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)  
@@ -85,46 +86,3 @@ def prepareReceptors(runID: str, generation: int, episode: int, mutID : str, mut
         print("Not done yet")
         raise Exception        
     
-
-""" import vina
-import sh
-
-
-command = f'~/ADFRsuite-1.0/bin/prepare_receptor -r {mutantClass_.generationDict[generation][mutID]["structurePath"]} \
-            -o {outFile} -A hydrogens -v -U nphs_lps_waters' 
-
-scriptDir = "/home/cewinharhar/GITHUB/AutoDock-Vina/example/autodock_scripts"
-
-receptorDir = "data/processed/3D_pred/2023_Apr_20-15:07/0bc78f1071f374665515956646110ea4a2a90639_gen22.pdbqt"
-receptorDir = "/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/2023_Apr_21-18:40/d27e6afc186b75c76b7fe435f4b9560b42cd14a2_gen1.pdbqt"
-receptorDir = "data/raw/debug.pdbqt"
-
-
-flexOut = "data/raw"
-re_ = "LYS168"
-command = f"pythonsh {scriptDir}/prepare_flexreceptor.py -r {receptorDir} -s {re_} -g {flexOut}/rig.pdbqt -x {flexOut}/flex.pdbqt"
-#run command
-ps = subprocess.Popen([command],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)  
-stdout,stderr = ps.communicate()
-
-ligDir = "data/processed/ligands/ligand_Benzenpropanoic_acid.pdbqt"
-vina_docking=f"/home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64 --receptor {flexOut}/rig.pdbqt --flex {flexOut}/flex.pdbqt --ligand {ligDir}\
-                --seed 13 --center_x 5.372 --center_y 5.350 --center_z 2.324 \
-                --size_x 20.0 --size_y 20.0 --size_z 20.0 \
-                --out {flexOut}/testFlex.pdbqt --num_modes 1"
-
-vina_docking=f"/home/cewinharhar/GITHUB/Vina-GPU-CUDA/Vina-GPU --receptor {flexOut}/rig.pdbqt --ligand {ligDir}\
-                --seed 13 --center_x 5.372 --center_y 5.350 --center_z 2.324 \
-                --size_x 20.0 --size_y 20.0 --size_z 20.0 \
-                --out {flexOut}/testFlex.pdbqt --num_modes 5 --thread 8192"
-
-#os.system(vina_docking)
-#run command
-ps = subprocess.Popen([vina_docking],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
-stdout, stderr = ps.communicate()
-
-with open("data/raw/flexLog_gpu.txt", "w+") as f:
-    f.write(stdout.decode("utf-8"))
-f.close()
-
-from pprint import pprint """

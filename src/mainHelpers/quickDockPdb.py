@@ -9,7 +9,7 @@ def quickDockPdb(inputPDB, inputLigandPDBQT, outputPDB):
     seed = 42
     cx = cy = cz = 0
     sx = sy = sz = 20
-    num_modes = 1
+    num_modes = 10
     exhaustiveness = 32 
     vina_gpu_cuda_path = "/home/cewinharhar/GITHUB/Vina-GPU-2.0/Vina-GPU+"
 
@@ -60,6 +60,6 @@ def quickDockPdb(inputPDB, inputLigandPDBQT, outputPDB):
 
 if __name__ == "__main__":
 
-    quickDockPdb(inputPDB="/home/cewinharhar/GITHUB/reincatalyze/data/raw/aKGD_FE_oxo_relaxed_metal.pdb",
+    quickDockPdb(inputPDB="/home/cewinharhar/GITHUB/reincatalyze/data/raw/ortho12_FE_oxo.pdb",
                  inputLigandPDBQT="/home/cewinharhar/GITHUB/reincatalyze/data/processed/ligands/ligand_Dulcinyl.pdbqt",
-                 outputPDB="/home/cewinharhar/GITHUB/reincatalyze/data/wasteBin/tmp2.pdb") 
+                 outputPDB="/home/cewinharhar/GITHUB/reincatalyze/data/wasteBin/ortho12_tmp_sub9.pdb") 

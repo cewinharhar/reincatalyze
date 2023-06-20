@@ -1,5 +1,6 @@
 import pyrosetta
-from pyrosetta import pose_from_pdb, MoveMap, get_fa_scorefxn, get_score_function,  pose_from_file
+from pyrosetta import pose_from_pdb, pose_from_file, MoveMap, get_fa_scorefxn, get_score_function
+from pyrosetta.rosetta.protocols.simple_moves import SetupMetalsMover
 #from pyrosetta.toolbox import mutate_residue
 from typing import List, Tuple
 # Initialize PyRosetta in mute mode
@@ -47,10 +48,10 @@ def mutateProteinPyrosetta(mutations : List[Tuple], amino_acid_sequence : str, s
 
         #print("before pyrostte muat")
         pyrosetta.toolbox.mutate_residue(pose, 
-                                        singleMutationPosition + 1,  #because starts with 1
+                                        singleMutationPosition + 1,  
                                         singleMutationResidue, 
-                                        pack_radius=nrOfNeighboursToRelax, #how many AA down and upstream from mutation side should be relaxed
-                                        pack_scorefxn=scorefxn)    
+                                        pack_radius=nrOfNeighboursToRelax, #Number AAs up and downstream to relax
+                                        pack_scorefxn=scorefxn)            #standard Pyrosetta Scoring Function
     
     #update chain ID
     #update_pose_chains_from_pdb_chains
@@ -108,22 +109,21 @@ def main_pyroprolex(source_structure_path : str, target_structure_path : str, ma
     #relax.cartesian(True)
     relax.apply(pose)
 
-    # Save the relaxed structure
+    # Save the relaxed structure 
     pose.dump_pdb(target_structure_path)
 
 def relaxCofactors(source_structure_path : str, target_structure_path : str, max_iter : int = 100):    
     """
     """
     #metal detector and mover
-    #metaldetector = SetupMetalsMover() #!!!!!!!!!!!!!!!!!!!!!
+    metaldetector = SetupMetalsMover() #!!!!!!!!!!!!!!!!!!!!!
 
     #Scorefunction
     scorefxn = get_score_function()
 
     #IMPORTANT: must set weights for metalbinding to move metal
-    #scorefxn.set_weight(pyrosetta.rosetta.core.scoring.ScoreType.metalbinding_constraint, 1.0) 
+    scorefxn.set_weight(pyrosetta.rosetta.core.scoring.ScoreType.metalbinding_constraint, 1.0) 
 
-    #----------------------------
     # Relax the structure 
     relax = pyrosetta.rosetta.protocols.relax.FastRelax()
     relax.set_scorefxn(scorefxn)
@@ -133,27 +133,10 @@ def relaxCofactors(source_structure_path : str, target_structure_path : str, max
     # the parameters for the flag you get with the mol_to_params.py script
 
     # Load the input PDB file
-    try:
-        pose = pose_from_pdb(source_structure_path)
-    except:
-        pose = pose_from_file(source_structure_path)
+    pose = pose_from_pdb(source_structure_path)
 
     #apply metaldetector
-    #metaldetector.apply(pose) 
-
-    # Define the MoveMap for local relaxation
-    #movemap = MoveMap()
-    #movemap.create_movemap_from_pose
-    # Add cofactors and metal ions to the MoveMap
-    #cofactorResidueIndex    = get_cofactor_indices_by_names(pose, relaxConfig["cofactorResidueName"]) # Replace with a list of cofactor and metal ion residue indices
-    #metalResidueIndex       = get_cofactor_indices_by_names(pose, relaxConfig["metalResidueName"]) # Replace with a list of cofactor and metal ion residue indices
-
-    #for cofaIndex in cofactorResidueIndex:
-            #movemap.set_bb(cofaIndex, True) #MAKE BACKBONE FLEXIBEL
-    #        movemap.set_chi(cofaIndex, True) #MAKE ATOMS FLEXIBEL
-    #for cofaIndex in cofactorResidueIndex:
-            #movemap.set_bb(cofaIndex, True) #MAKE BACKBONE FLEXIBEL
-    #        movemap.set_chi(cofaIndex, True) #MAKE ATOMS FLEXIBEL
+    metaldetector.apply(pose) 
 
     #relax.set_movemap(movemap)
     relax.max_iter(max_iter)
@@ -166,6 +149,12 @@ def relaxCofactors(source_structure_path : str, target_structure_path : str, max
 
 
 if __name__ == "__main__":
+
+    relaxCofactors(
+        source_structure_path = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/ortho12_FE_oxo.pdb",
+        target_structure_path = "/home/cewinharhar/GITHUB/reincatalyze/data/raw/ortho12_FE_oxo_onlyMetal.pdb"
+    )
+
 
     relaxConfig = dict(
         metalResidueName        = ["FE2"],

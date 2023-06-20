@@ -8,7 +8,7 @@ import numpy as np
 def esm2_getEmbedding(sequence : str, embedder = None, returnList = True):
     """
     
-    """
+    """ 
     if not embedder:
         embedder = pipeline("feature-extraction", model="facebook/esm2_t6_8M_UR50D")
 

@@ -327,7 +327,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
     log_f.write('generation,timestep,reward\n')
     #logfile for each timestep
     log_t = open(pj(residoraConfig["log_dir"], runID + "_timestep.csv"), "w+")
-    log_t.write('generation,episode,reward,mutID,mutationResidue,oldAA,newAA\n')
+    log_t.write('generation,episode,reward,rmse,mutID,mutationResidue,oldAA,newAA\n')
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
 
@@ -426,14 +426,14 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
             #------------------------------------------------------------------------------------------
 
             #the information is beeing stored in the mutantClass
-            reward = main_gaesp(generation  = generation, 
-                                episode     = episode,
-                                mutID       = mutID, 
-                                mutantClass_= mutants, 
-                                config      = config, 
-                                ligandNr    = ligandNr, 
-                                boxSize     = config.boxSize,
-                                dockingTool = dockingTool) #vina or vinagpu
+            reward, RMSE, distance = main_gaesp(generation  = generation, 
+                                                episode     = episode,
+                                                mutID       = mutID, 
+                                                mutantClass_= mutants, 
+                                                config      = config, 
+                                                ligandNr    = ligandNr, 
+                                                boxSize     = config.boxSize,
+                                                dockingTool = dockingTool) #vina or vinagpu
 
             print(f"---- \n Reward: {reward} \n  ---- \n")
             #-----------------------
@@ -443,7 +443,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
             
             #iterate through list and add new row to log
             for idx in range(len(mutationList[0][0])):
-                log_t.write(f"{generation},{episode},{round(reward, 4)},{mutID},{mutationList[0][0][idx]},{mutationList[0][1][idx]},{mutationList[0][2][idx]}\n")
+                log_t.write(f"{generation},{episode},{round(reward, 4)},{round(RMSE, 4)},{mutID},{mutationList[0][0][idx]},{mutationList[0][1][idx]},{mutationList[0][2][idx]}\n")
             log_t.flush()
 
             # ---------------------

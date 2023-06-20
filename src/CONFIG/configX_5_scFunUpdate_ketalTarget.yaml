@@ -1,6 +1,6 @@
 config1:
   globalConfig:
-    runIDExtension: sub9_nm5_bs15_s42_ex16_mel10_mts100000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun
+    runIDExtension: sub9_nm5_bs15_s42_ex16_mel10_mts10000_k30_ec01_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget
     transformerName: facebook/esm2_t6_8M_UR50D
     gpu_vina: true
     vina_gpu_cuda_path: /home/cewinharhar/GITHUB/Vina-GPU-2.0/Vina-GPU+
@@ -29,10 +29,10 @@ config1:
   residoraConfig:
     multiAction: null              # how many position at once should deepMut introduce
     max_ep_len: 10               #max timesteps in one episode
-    max_training_timesteps: 100000  # break training loop if timeteps > max_training_timesteps
+    max_training_timesteps: 10000  # break training loop if timeteps > max_training_timesteps
     save_model_freq: 25         # save model frequency (in num timesteps)
     K_epochs: 30                # update policy for K epochs
-    eps_clip: 0.3               # clip parameter for PPO
+    eps_clip: 0.1               # clip parameter for PPO
     gamma: 0.99                 # discount factor
     lr_actor: 0.0009            # learning rate for actor network
     lr_critic: 0.009            # learning rate for critic network

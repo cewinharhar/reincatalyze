@@ -6,6 +6,9 @@ import seaborn as sns
 import os
 from os.path import join as pj
 from typing import List
+import subprocess
+
+from pymol import cmd
 
 def plotRewardByGeneration(filepath, x_label='Generation', y_label='Reward', title='Reward vs Generation', window_size=100, yTop = None, fileName : str = None):
     # Read the CSV file with pandas
@@ -108,7 +111,7 @@ def mutationFrequency(filepath, fileName, originalSeq = 'MSTETLRLQKARATEEGLAFETP
     groupedRep = dfRep.groupby(['oldAA', 'mutationResidue']).size().reset_index(name='frequency')
 
     # Create a scatter plot
-    plt.figure(figsize=(30, 5))
+    plt.figure(figsize=(30, 20))
 
     plt.scatter(grouped['mutationResidue'], grouped['oldAA'], s=grouped['frequency'] * 5, alpha=0.4, c="b", label='Overall Frequency')
     # Add amino acid labels and residue numbers to each bubble
@@ -176,19 +179,74 @@ def mutation_summary(filepath: str, output_filename=None):
 
     return summary_table
 
+
+def pymolMovie(csvPath, pdbPath):
+    # Load the data
+    df = pd.read_csv(csvPath)
+    df = df.iloc[:250,:]
+
+    # Load your structure into pymol
+    cmd.load(pdbPath)
+
+    # Create the movie
+    total_frames = df['generation'].nunique()
+
+    nrow = len(df)
+
+    # Initialize a dict to keep track of current generation and frame
+    current_generation = {'generation': None, 'frame': 1}
+
+    for index, row in df.iterrows():
+        print(f"({index}/{nrow})", end = "\r")
+        if row['generation'] != current_generation['generation']:
+            # Create a new state for a new generation
+            current_generation['generation'] = row['generation']
+            cmd.create(f'state_{current_generation["frame"]}', 'all', 1, current_generation['frame'])
+            cmd.frame(current_generation['frame'])
+            cmd.hide('spheres', 'all')
+            cmd.color('white', 'all')  # Reset color to default white
+            current_generation['frame'] += 1
+
+        # Select the residue to mutate
+        selection = f'resi {row["mutationResidue"]}'
+        
+        # Color the selected residue
+        _ = cmd.color('red', selection)
+
+        # Now make it more visually distinct by showing it as a sphere
+        #_ = cmd.show('spheres', selection)
+
+    # Set the total number of frames for the movie
+#    cmd.mset(f'1 x{total_frames}')
+    cmd.mset(f'1 x{nrow}')
+
+    # Rewind to the first frame
+    cmd.frame(1)
+
+    cmd.mpng('data/wasteBin/movie_frames.png')
+
+    command = """ffmpeg -r 10 -i /home/cewinharhar/GITHUB/reincatalyze/data/wasteBin/movie_frames%04d.png -c:v libx264 -vf "fps=25,format=yuv420p" /home/cewinharhar/GITHUB/reincatalyze/data/wasteBin/movie.mp4"""
+    ps = subprocess.Popen([command],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+    stdout, stderr = ps.communicate()    
+
+    #cmd.mplay()
+
+
 if __name__ == "__main__":
 
+    csvPath = "log/residora/2023-Jun-17-1934_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k30_ec01_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun/2023-Jun-17-1934_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k30_ec01_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_timestep.csv"
+    pdbPath = "data/raw/aKGD_FE_oxo_relaxed_metal.pdb"
+
+    pymolMovie(csvPath, pdbPath)
 
     fp = "log/residora/2023-Jun-15-1604_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec035_g099_lra1e-3_lrc1e-2_LOCAL_nd8_ceAp-D/2023-Jun-15-1604_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec035_g099_lra1e-3_lrc1e-2_LOCAL_nd8_ceAp-D_timestep.csv"
-    fp = "log/residora/2023-Jun-15-1608_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd8_ceAp-D/2023-Jun-15-1608_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd8_ceAp-D_timestep.csv"
-    
-    data = pd.read_csv(fp)
-    uniqueResi = list(set(data.mutationResidue.tolist()))
 
+    fp = "log/residora/2023-Jun-16-1601_sub9_nm5_bs15_s42_ex16_mel10_mts100000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun/2023-Jun-16-1601_sub9_nm5_bs15_s42_ex16_mel10_mts100000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_timestep.csv"
+    
     plotRewardByGeneration(
         filepath = fp,
         fileName = "generationVsReward_extra.png",
-        yTop = 200
+        yTop = 50
     )
 
     plotMutationBehaviour(
@@ -205,9 +263,9 @@ if __name__ == "__main__":
     )    
 
     plotRewardByGeneration(
-        filepath = "log/residora/2023-Jun-09-1804_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc1e-3/2023-Jun-09-1804_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc1e-3_timestep.csv",
+        filepath = "log/residora/2023-Jun-19-1918_sub9_nm5_bs15_s42_ex16_mel10_mts100000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun/2023-Jun-19-1918_sub9_nm5_bs15_s42_ex16_mel10_mts100000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_timestep.csv",
         fileName = "generationVsReward_extra.png",
-        yTop = 200
+        yTop = 25
     )
 
     plotRewardByGeneration(

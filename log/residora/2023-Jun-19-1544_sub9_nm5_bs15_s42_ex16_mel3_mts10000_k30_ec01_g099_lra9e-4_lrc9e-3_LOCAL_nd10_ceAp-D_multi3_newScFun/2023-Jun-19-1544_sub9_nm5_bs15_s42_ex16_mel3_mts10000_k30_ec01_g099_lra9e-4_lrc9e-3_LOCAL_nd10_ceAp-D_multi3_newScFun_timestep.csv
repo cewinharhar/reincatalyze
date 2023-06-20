@@ -1,0 +1,4 @@
+generation,episode,reward,mutID,mutationResidue,oldAA,newAA
+1,1,0.0,3a554d1d42489b9aa65528c3c0a11c2568d37809,167,W,R
+1,1,0.0,3a554d1d42489b9aa65528c3c0a11c2568d37809,287,K,T
+1,1,0.0,3a554d1d42489b9aa65528c3c0a11c2568d37809,148,F,A

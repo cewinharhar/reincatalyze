@@ -1,6 +1,6 @@
 config1:
   globalConfig:
-    runIDExtension: sub9_nm5_bs15_s42_ex16_mel10_mts10000_k30_ec01_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun
+    runIDExtension: sub9_nm5_bs15_s42_ex16_mel10_mts10000_k30_ec01_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget
     transformerName: facebook/esm2_t6_8M_UR50D
     gpu_vina: true
     vina_gpu_cuda_path: /home/cewinharhar/GITHUB/Vina-GPU-2.0/Vina-GPU+
@@ -15,7 +15,7 @@ config1:
     wildTypeAASeq: MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA
     wildTypeStructurePath: data/raw/aKGD_FE_oxo_relaxed_metal.pdb
     reference: data/raw/reference/reference.pdb
-    reference_ligand: data/raw/reference/reference_ligandX.pdb
+    reference_ligand: data/raw/reference/reference_ligand_ketalTarget.pdb
     thread: 8000
     num_modes: 5
     boxSize: 15

@@ -141,7 +141,7 @@ class PPO:
         #-----------------------------------------------------------------------------------------------
         # Optimize the policy network for K epochs
         for kEpoch in range(self.K_epochs):
-            print("PPO>kEpoch iteration")
+            #print("PPO>kEpoch iteration")
             #print(kEpoch)
             # Evaluating old actions and values
             #print("Update > evaluate")
@@ -170,7 +170,7 @@ class PPO:
             self.optimizer.step()
         #-----------------------------------------------------------------------------------------------
         # Copy new weights into old policy
-        print("PPO>copyNewWeightsIntoOldPolicy")
+        #print("PPO>copyNewWeightsIntoOldPolicy")
         self.policy_old.load_state_dict(self.policy.state_dict())
 
         # clear buffer
