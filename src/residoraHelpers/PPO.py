@@ -6,18 +6,14 @@ import os
 class PPO:
     """
     The PPO class is used to perform the Proximal Policy Optimization (PPO) algorithm to update the policy of an actor-critic network.
-
     The class constructor initializes the class variables, including the buffer for storing the actions, states, log probabilities, rewards, state values, and isTerminal states. It also initializes the hyperparameters for PPO, such as the discount factor gamma, the number of epochs K_epochs for optimizing the policy, the clipping parameter eps_clip, and the device on which to perform computations. Additionally, it initializes the actor-critic network, the optimizer, and the old policy.
-
     The clearBuffer() function is used to clear the buffer after each training iteration.
-
     The select_action_exploitation(embedding) function is used to select the action with the highest probability or the highest expected value based on the learned policy of the agent during the exploitation phase. It accepts an embedding as input, and it returns the selected action.
-
-    The update() function updates the policy of the PPO agent using the PPO update algorithm with the experience gathered in the replay buffer. It computes the Monte Carlo estimate of returns for the collected experiences, normalizes the rewards, and calculates the advantages. It then optimizes the policy for a fixed number of epochs using the PPO loss function, which is a clipped surrogate objective. Finally, it copies the new weights into the old policy, clears the replay buffer, and returns nothing.
-        
+    The update() function updates the policy of the PPO agent using the PPO update algorithm with the experience gathered in the replay buffer. It computes the Monte Carlo estimate of returns for the collected experiences, normalizes the rewards, and calculates the advantages. It then optimizes the policy for a fixed number of epochs using the PPO loss function, which is a clipped surrogate objective. Finally, it copies the new weights into the old policy, clears the replay buffer, and returns nothing.        
     """
+    
     def __init__(self, ActorCritic, gamma = 0.99, K_epochs = 40, eps_clip = 0.2, device = None):
-
+ 
         if not device:
             if(torch.cuda.is_available()): 
                 self.device = torch.device('cuda:0') 

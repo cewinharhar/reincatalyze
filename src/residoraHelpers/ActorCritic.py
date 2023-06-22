@@ -192,7 +192,7 @@ class ActorCritic(nn.Module):
 
             actionLogProbs = torch.stack(actionLogProbs, dim=-1)            
             
-            distEntropy = dist.entropy()
+            distEntropy = dist.entropy() 
 
             stateValues = self.critic(embedding)
             

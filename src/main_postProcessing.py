@@ -267,6 +267,11 @@ if __name__ == "__main__":
         fileName = "generationVsReward_extra.png",
         yTop = 25
     )
+    plotRewardByGeneration(
+        filepath = "log/residora/2023-Jun-19-1918_sub9_nm5_bs15_s42_ex16_mel10_mts100000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun/2023-Jun-19-1918_sub9_nm5_bs15_s42_ex16_mel10_mts100000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun.csv",
+        fileName = "generationVsReward_comp.png",
+        yTop = 100
+    )
 
     plotRewardByGeneration(
         filepath = "log/residora/2023-Jun-10-0707_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra3e-4_lrc1e-3/2023-Jun-10-0707_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra3e-4_lrc1e-3_timestep.csv",

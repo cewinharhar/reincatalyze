@@ -21,7 +21,7 @@ class convNet(nn.Module):
         )
 
         #get the dimen
-
+ 
     def forward(self, x1D):
         #x3D = x1D.unsqueeze(0).unsqueeze(0)
         return self.cnn(x1D)
