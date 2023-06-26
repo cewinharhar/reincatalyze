@@ -1,5 +1,5 @@
 import torch.nn as nn
-
+ 
 class convNet(nn.Module):
     """This class represents a convolutional neural network used in the ActorCritic class.
     It takes in the following parameters:
