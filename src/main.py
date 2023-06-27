@@ -515,7 +515,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
     plotRewardByGeneration(filepath = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 
                             title="Reward over generations",
                             window_size = 100, 
-                            yTop = 200,
+                            yTop = 50,
                             fileName="generationVsReward.png")
     
     plotMutationBehaviour(filepath  = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 
