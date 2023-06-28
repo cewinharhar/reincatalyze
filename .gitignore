@@ -96,6 +96,8 @@ target/
 #MOL
 *.mol
 
+#compressed stuff
+*.tar.gz
 
 # Data and models
 data/processed/*
@@ -104,3 +106,4 @@ docker/app/*/*
 docker_reincat_pipeline/*
 *.bin
 !.gitkeep
+.Rproj.user
