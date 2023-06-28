@@ -2,6 +2,7 @@ config5:
   globalConfig:
     runIDExtension: sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra1e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget
     transformerName: facebook/esm2_t6_8M_UR50D
+    transformerDevice: cuda:0    
     gpu_vina: true
     vina_gpu_cuda_path: /home/cewinharhar/GITHUB/Vina-GPU-2.0/Vina-GPU+
     vina_path: /home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64

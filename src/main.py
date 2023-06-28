@@ -53,6 +53,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
                   #globalConfig
                   runIDExtension : str, 
                   transformerName: str = "facebook/esm2_t6_8M_UR50D", 
+                  transformerDevice: str = "cuda:0",
                   gpu_vina: str = True,
                   vina_gpu_cuda_path: str = "/home/cewinharhar/GITHUB/Vina-GPU-2.0/Vina-GPU+/Vina_GPU", 
                   vina_path: str = "/home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64", 
@@ -179,8 +180,8 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
     #------------------------------------------------
     #------------  DEEPMUT CONFIG  ------------------------
     #
-    classifier  = pipeline("fill-mask", model=transformerName)
-    embedder    = pipeline("feature-extraction", model=transformerName, top_k = 5)    
+    classifier  = pipeline("fill-mask", model=transformerName, device=transformerDevice)
+    embedder    = pipeline("feature-extraction", model=transformerName, top_k = 5, device=transformerDevice)    
 
     #------------------------------------------------
     #------------  GAESP CONFIG  ------------------------

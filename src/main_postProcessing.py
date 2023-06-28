@@ -243,11 +243,32 @@ if __name__ == "__main__":
 
     fp = "log/residora/2023-Jun-16-1601_sub9_nm5_bs15_s42_ex16_mel10_mts100000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun/2023-Jun-16-1601_sub9_nm5_bs15_s42_ex16_mel10_mts100000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_timestep.csv"
     
-    plotRewardByGeneration(
-        filepath = fp,
-        fileName = "generationVsReward_extra.png",
-        yTop = 50
-    )
+    fpL = [
+        "log/residora/2023_june_cliprange/2023-Jun-22-1639_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec015_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget/2023-Jun-22-1639_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec015_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget_timestep.csv",
+        "log/residora/2023_june_cliprange/2023-Jun-23-0608_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget/2023-Jun-23-0608_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget_timestep.csv",
+        "log/residora/2023_june_cliprange/2023-Jun-23-1956_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec025_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget/2023-Jun-23-1956_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec025_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget_timestep.csv",        
+    ]
+    
+    fpL2 = [
+        "log/residora/2023_june_lrRange/2023-Jun-22-1639_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra1e-4_lrc1e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget/2023-Jun-22-1639_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra1e-4_lrc1e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget_timestep.csv",
+        "log/residora/2023_june_lrRange/2023-Jun-23-0608_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra3e-4_lrc3e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget/2023-Jun-23-0608_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra3e-4_lrc3e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget_timestep.csv",
+        "log/residora/2023_june_lrRange/2023-Jun-23-1956_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra6e-4_lrc6e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget/2023-Jun-23-1956_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra6e-4_lrc6e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget_timestep.csv",
+        "log/residora/2023_june_lrRange/2023-Jun-24-0955_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget/2023-Jun-24-0955_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget_timestep.csv"        
+    ]
+
+    for i in fpL:
+        plotRewardByGeneration(
+            filepath = i,
+            fileName = "generationVsReward_extra.png",
+            yTop = 50
+        )
+
+    for i in fpL2:
+        plotRewardByGeneration(
+            filepath = i,
+            fileName = "generationVsReward_extra.png",
+            yTop = 50
+        )
 
     plotMutationBehaviour(
         filepath=fp,

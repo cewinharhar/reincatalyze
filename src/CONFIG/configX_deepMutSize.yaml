@@ -1,8 +1,8 @@
-config4:
+config1:
   globalConfig:
-    runIDExtension: sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget
-    transformerName: facebook/esm2_t6_8M_UR50D
-    transformerDevice: cuda:0    
+    runIDExtension: sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_T35M_newScFun_ketalTarget
+    transformerName: facebook/esm2_t12_35M_UR50D
+    transformerDevice: cuda:0
     gpu_vina: true
     vina_gpu_cuda_path: /home/cewinharhar/GITHUB/Vina-GPU-2.0/Vina-GPU+
     vina_path: /home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64
@@ -49,10 +49,11 @@ config4:
     dropOutProb     : 0.01
     residoraDevice  : cpu
 
-config5:
+config2:
   globalConfig:
-    runIDExtension: sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget
-    transformerName: facebook/esm2_t6_8M_UR50D
+    runIDExtension: sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_T150M_newScFun_ketalTarget
+    transformerName: facebook/esm2_t30_150M_UR50D
+    transformerDevice: cuda:0
     gpu_vina: true
     vina_gpu_cuda_path: /home/cewinharhar/GITHUB/Vina-GPU-2.0/Vina-GPU+
     vina_path: /home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64
@@ -83,7 +84,7 @@ config5:
     max_training_timesteps: 10000  # break training loop if timeteps > max_training_timesteps
     save_model_freq: 25         # save model frequency (in num timesteps)
     K_epochs: 50                # update policy for K epochs
-    eps_clip: 0.35               # clip parameter for PPO
+    eps_clip: 0.3               # clip parameter for PPO
     gamma: 0.99                 # discount factor
     lr_actor: 0.0009            # learning rate for actor network
     lr_critic: 0.009            # learning rate for critic network
@@ -99,10 +100,11 @@ config5:
     dropOutProb     : 0.01
     residoraDevice  : cpu
 
-config6:
+config3:
   globalConfig:
-    runIDExtension: sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec04_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget
-    transformerName: facebook/esm2_t6_8M_UR50D
+    runIDExtension: sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_T650M_newScFun_ketalTarget
+    transformerName: facebook/esm2_t33_650M_UR50D
+    transformerDevice: cuda:0
     gpu_vina: true
     vina_gpu_cuda_path: /home/cewinharhar/GITHUB/Vina-GPU-2.0/Vina-GPU+
     vina_path: /home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64
@@ -133,7 +135,7 @@ config6:
     max_training_timesteps: 10000  # break training loop if timeteps > max_training_timesteps
     save_model_freq: 25         # save model frequency (in num timesteps)
     K_epochs: 50                # update policy for K epochs
-    eps_clip: 0.4               # clip parameter for PPO
+    eps_clip: 0.3               # clip parameter for PPO
     gamma: 0.99                 # discount factor
     lr_actor: 0.0009            # learning rate for actor network
     lr_critic: 0.009            # learning rate for critic network
