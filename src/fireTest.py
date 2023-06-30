@@ -241,3 +241,4 @@ print(stdout.decode()) """
 
     embedder    = pipeline("feature-extraction", model=transformerName, top_k = 5, device = 0) 
     embedder("MSTETLRLQKARATEEGLAFETPGGLTRA")
+

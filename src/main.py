@@ -427,7 +427,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
             #------------------------------------------------------------------------------------------
 
             #the information is beeing stored in the mutantClass
-            reward, RMSE, distance = main_gaesp(generation  = generation, 
+            reward, RMSE, distance, ErrorInGAESP = main_gaesp(generation  = generation, 
                                                 episode     = episode,
                                                 mutID       = mutID, 
                                                 mutantClass_= mutants, 
@@ -437,6 +437,8 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
                                                 dockingTool = dockingTool) #vina or vinagpu
 
             print(f"---- \n Reward: {reward} \n  ---- \n")
+
+
             #-----------------------
             ppo_agent.rewards.append(reward)
             ppo_agent.isTerminals.append(residoraConfig["done"]) #TODO make done depend on the enzyme stability
@@ -495,6 +497,10 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
             # break; if the episode is over, but never will!!
             if residoraConfig["done"]:
                 break
+            
+            if ErrorInGAESP:
+                print("Fatal Docking error observed. Quiting current generation")
+                break            
 
         
         print_running_reward += current_ep_reward

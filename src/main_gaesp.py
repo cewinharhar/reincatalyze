@@ -74,7 +74,8 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
     #---------
     # -----------------------------------------------
     
-    #print(f"Preparing for Docking: \n (Benjamin... time to wake up)")
+    #This variable checks if under all circumstances the docking failed (due to destructive mutations etc) in this case go to next episode in main.py
+    ErrorInGAESP = False
 
     #extract ligand smiles to store in the dockingresults in the mutantClass
     ligandNrInSmiles = config.ligand_df.ligand_smiles.tolist()[ligandNr]
@@ -83,7 +84,7 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
 
     #define output path for ligand docking results
     ligandOutPath = pj(config.data_dir, "processed",  "docking_pred", config.runID, f"{mutID}_gen{generation}_ep{episode}_ligand_{str(ligandNr+1)}.{config.output_formate}")
-    
+     
     print(f"LigandOutputPath: {ligandOutPath}")
     if dockingTool.lower() == "vinagpu":
         #you could add --exhaustiveness 32 for more precise solution
@@ -152,7 +153,8 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
             dockingResPath  = None, 
             dockingResTable = None
         )
-        return punishment
+        ErrorInGAESP = True
+        return punishment, 10, 10, ErrorInGAESP #execute enzyme destruction order
     
     except Exception as err:
         print(err)
@@ -166,7 +168,8 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
             dockingResPath  = None, 
             dockingResTable = None
         )        
-        return punishment
+        ErrorInGAESP = True
+        return punishment, 10, 10, ErrorInGAESP #execute enzyme destruction order
 
 
     #-------------------------------
@@ -275,5 +278,5 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
     else:
         reward = punishment
     #print(reward)
-    return reward, RMSE, distance
+    return reward, RMSE, distance, ErrorInGAESP
 
