@@ -5,14 +5,8 @@ import matplotlib.ticker as plticker
 import numpy as np
 import pandas as pd
 
-for i in range(100):
-    oh = "".join([str(random.randint(a=0, b = 9)) for x in range(7)])
-    nr = "+4176"+oh
-    print(nr)
-
-
 def HeatmapPlotter(heatmap_file_InFun, excel_choice_InFun, heatmap_folder, 
-                    heatmap_sheet_InFun="", heatmap_name="", heatmap_orientation="horizontal", delimiter_heatmap_InFun=","): #
+                    heatmap_sheet_InFun="", heatmap_name="", heatmap_orientation="horizontal", delimiter_heatmap_InFun=",", colorbarTitle = "", cmap = "BuPu", colorBarXTickerBase = 0.5): #
     
 
     pfad_excel = heatmap_file_InFun
@@ -78,9 +72,9 @@ def HeatmapPlotter(heatmap_file_InFun, excel_choice_InFun, heatmap_folder,
             ### FÜR QUEEEER
             cbar = ax.figure.colorbar(im, ax=ax, **cbar_kw, orientation=ausrichtung, pad=0.07)
             #cbar.ax.set_ylabel(cbarlabel, va="center", rotation=90) #, nur für titel
-            cbar.ax.set_title("Fold increase comp. aKGD31")
+            cbar.ax.set_title(colorbarTitle)
             #passe ticks den Werten an, mit base bestimmst du tick abstände
-            loc = plticker.MultipleLocator(base=0.5)  # this locator puts ticks at regular intervals
+            loc = plticker.MultipleLocator(base=colorBarXTickerBase)  # this locator puts ticks at regular intervals
 
             cbar.ax.xaxis.set_major_locator(loc)
 
@@ -99,7 +93,7 @@ def HeatmapPlotter(heatmap_file_InFun, excel_choice_InFun, heatmap_folder,
             cbar.ax.set_ylabel(cbarlabel, va="center", rotation=90) #, nur für titel
             #cbar.ax.set_title('Umsatz / mM')
             #passe ticks den Werten an, mit base bestimmst du tick abstände
-            loc = plticker.MultipleLocator(base=0.5)  # this locator puts ticks at regular intervals
+            loc = plticker.MultipleLocator(base=colorBarXTickerBase)  # this locator puts ticks at regular intervals
             cbar.ax.yaxis.set_major_locator(loc)
 
             # We want to show all ticks...
@@ -139,18 +133,19 @@ def HeatmapPlotter(heatmap_file_InFun, excel_choice_InFun, heatmap_folder,
     if ausrichtung == 'horizontal' or "":
         plt.figure(figsize=(30, 10))
         fig, ax = plt.subplots()
-        im, cbar = heatmap(data_matrix_T, sub, sca, ax=ax, cmap="BuPu", cbarlabel="Fold increase comp. aKGD31", vmin=0, vmax=int(round(np.max(data_matrix_T)+0.5))) #vmax=int(round(max(data_matrix_T)+0.5)) vmin and max stands for min and max values in konzentration bar
+        im, cbar = heatmap(data_matrix_T, sub, sca, ax=ax, cmap=cmap, cbarlabel=colorbarTitle, vmin=0, vmax=float(round(np.max(data_matrix_T)+0.5, 1))) #vmax=int(round(max(data_matrix_T)+0.5)) vmin and max stands for min and max values in konzentration bar
         #only show every second tick
         for label in cbar.ax.xaxis.get_ticklabels()[::2]:
-            label.set_visible(False)
+            label.set_visible(True)
         fig.tight_layout()
-        fig.savefig("/home/cewinharhar/Documents/"+ name_save + ".jpeg" , format='jpeg', dpi=500)
+        fig.savefig(name_save + ".jpeg" , format='jpeg', dpi=500)
         #plt.show()
         print("your file has been saved. Have a nice day :)")
+
     elif ausrichtung == 'vertical':
         plt.figure(figsize=(10, 30))
         fig, ax = plt.subplots()
-        im, cbar = heatmap(data_matrix, sca, sub, ax=ax, cmap="BuPu", cbarlabel="Transformation [mM]", vmin=0, vmax=int(round(np.max(data_matrix)+0.5)))
+        im, cbar = heatmap(data_matrix, sca, sub, ax=ax, cmap=cmap, cbarlabel="Transformation [mM]", vmin=0, vmax=int(round(np.max(data_matrix)+0.5)))
         fig.tight_layout()
         fig.savefig(save +"\\"+ name_save + ".jpeg", format='jpeg', dpi=2000)
         plt.show()
@@ -161,16 +156,6 @@ def HeatmapPlotter(heatmap_file_InFun, excel_choice_InFun, heatmap_folder,
 if __name__ == "__main__":
     fire.Fire()
 
-
-""" 
-import subprocess
-
-
-vina_docking = "./Vina-GPU --thread 8000 --receptor /home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/2023-May-22-1846_sub9_nm5_bs15_s42_ex16_mel10_mts1000_k50_ec02_g099_lra9e-4_lrc1e-3/d27e6afc186b75c76b7fe435f4b9560b42cd14a2_gen1_ep1.pdbqt --ligand /home/cewinharhar/GITHUB/reincatalyze/data/processed/ligands/ligand_Dulcinyl.pdbqt                         --seed 42 --center_x 5.372000217437744 --center_y -5.349999904632568 --center_z 2.3239998817443848                          --size_x 20 --size_y 20 --size_z 20                         --out /home/cewinharhar/GITHUB/reincatalyze/data/processed/docking_pred/2023-May-22-1846_sub9_nm5_bs15_s42_ex16_mel10_mts1000_k50_ec02_g099_lra9e-4_lrc1e-3/d27e6afc186b75c76b7fe435f4b9560b42cd14a2_ligand_9.pdbqt --num_modes 5 --search_depth 16"
-
-ps = subprocess.Popen([vina_docking],shell=True, cwd="/home/cewinharhar/GITHUB/Vina-GPU-2.0/Vina-GPU+", stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
-stdout, stderr = ps.communicate()
-print(stdout.decode()) """
 
     mut = [
     "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGERTRAYRGFRDPDGVYDDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRSTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERRWGGGYADLGIAPPEPAGVAEDGVRA",
@@ -219,16 +204,22 @@ print(stdout.decode()) """
 
     len("S65R_L75P_F80D_G146S_T280R_D283G_F288L".split("_"))
 
-    HeatmapPlotter(
-        heatmap_file_InFun="~/Documents/screeningSummary4MA.csv",
-        excel_choice_InFun=False,
-        heatmap_folder = "~/Documents",
-        heatmap_name="summaryScreeningHeatmap",
-        delimiter_heatmap_InFun=",",
-        heatmap_orientation="horizontal"
-    )
+    #------------------------------------------------
+pi =r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\MASTER\MASTERARBEIT\JOURNAL\OD_forMA.csv"
 
-    pfad_excel = heatmap_file_InFun
+#create OD plot
+HeatmapPlotter(
+    heatmap_file_InFun=pi,
+    excel_choice_InFun=False,
+    heatmap_folder = r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\MASTER\MASTERARBEIT\JOURNAL",
+    heatmap_name="OD_MA",
+    delimiter_heatmap_InFun=";",
+    heatmap_orientation="horizontal",
+    colorbarTitle = "OD_600",
+    cmap = "copper_r",
+    colorBarXTickerBase = 0.5
+)
+
 
     from transformers import pipeline
 
