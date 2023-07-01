@@ -129,6 +129,7 @@ config3:
   pyroprolexConfig:
     mutationApproach: pyrosetta
   
+  
   residoraConfig:
     multiAction: null              # how many position at once should deepMut introduce
     max_ep_len: 10               #max timesteps in one episode

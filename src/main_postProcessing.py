@@ -58,9 +58,12 @@ def plotRewardByGeneration(filepath, x_label='Generation', y_label='Reward', tit
                         fileName="test.png") """
 
 
-def plotMutationBehaviour(filepath, initialRes: List, x_label='Generation', y_label='Mutation Position', title='Mutation Behavior', addText : bool = False, fontsize : float = 7.5, fileName : str = None):
+def plotMutationBehaviour(filepath, fileName : str = "mutationBehaviour.png", initialRes: List = None, x_label='Generation', y_label='Mutation Position', title='Mutation Behavior', addText : bool = False, fontsize : float = 7.5):
     # Read the CSV file with pandas
     data = pd.read_csv(filepath)
+
+    if not initialRes:
+        initialRes = data.mutationResidue.unique().tolist()
 
     # Create a professional-looking plot using seaborn
     sns.set_theme(style='whitegrid')
@@ -307,6 +310,28 @@ if __name__ == "__main__":
     )
 
     filepath = "log/residora/2023-Jun-15-1604_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec035_g099_lra1e-3_lrc1e-2_LOCAL_nd8_ceAp-D/2023-Jun-15-1604_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec035_g099_lra1e-3_lrc1e-2_LOCAL_nd8_ceAp-D_timestep.csv"
+
+
+    def makeAllPlots(fp):
+        plotRewardByGeneration(
+            filepath = fp,
+            fileName = "generationVsReward_extra.png",
+            yTop = 25,
+        )   
+        plotMutationBehaviour(
+             filepath = fp
+        )     
+        mutationFrequency(
+            filepath=fp,y
+            fileName="mutationBehaviour.png"
+        )
+
+
+
+    fp = "/home/cewinharhar/GITHUB/reincatalyze/log/residora/2023-Jun-28-1427_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec04_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget/2023-Jun-28-1427_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec04_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget_timestep.csv"    
+    makeAllPlots(fp)
+
+    
 
 """ # Example usage
 summary_table = mutation_summary('log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07_timestep.csv', 
