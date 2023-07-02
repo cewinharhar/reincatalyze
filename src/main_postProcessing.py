@@ -237,81 +237,6 @@ def pymolMovie(csvPath, pdbPath):
 
 if __name__ == "__main__":
 
-    csvPath = "log/residora/2023-Jun-17-1934_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k30_ec01_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun/2023-Jun-17-1934_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k30_ec01_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_timestep.csv"
-    pdbPath = "data/raw/aKGD_FE_oxo_relaxed_metal.pdb"
-
-    pymolMovie(csvPath, pdbPath)
-
-    fp = "log/residora/2023-Jun-15-1604_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec035_g099_lra1e-3_lrc1e-2_LOCAL_nd8_ceAp-D/2023-Jun-15-1604_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec035_g099_lra1e-3_lrc1e-2_LOCAL_nd8_ceAp-D_timestep.csv"
-
-    fp = "log/residora/2023-Jun-16-1601_sub9_nm5_bs15_s42_ex16_mel10_mts100000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun/2023-Jun-16-1601_sub9_nm5_bs15_s42_ex16_mel10_mts100000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_timestep.csv"
-    
-    fpL = [
-        "log/residora/2023_june_cliprange/2023-Jun-22-1639_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec015_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget/2023-Jun-22-1639_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec015_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget_timestep.csv",
-        "log/residora/2023_june_cliprange/2023-Jun-23-0608_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget/2023-Jun-23-0608_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget_timestep.csv",
-        "log/residora/2023_june_cliprange/2023-Jun-23-1956_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec025_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget/2023-Jun-23-1956_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec025_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget_timestep.csv",        
-    ]
-    
-    fpL2 = [
-        "log/residora/2023_june_lrRange/2023-Jun-22-1639_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra1e-4_lrc1e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget/2023-Jun-22-1639_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra1e-4_lrc1e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget_timestep.csv",
-        "log/residora/2023_june_lrRange/2023-Jun-23-0608_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra3e-4_lrc3e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget/2023-Jun-23-0608_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra3e-4_lrc3e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget_timestep.csv",
-        "log/residora/2023_june_lrRange/2023-Jun-23-1956_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra6e-4_lrc6e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget/2023-Jun-23-1956_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra6e-4_lrc6e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget_timestep.csv",
-        "log/residora/2023_june_lrRange/2023-Jun-24-0955_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget/2023-Jun-24-0955_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec02_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget_timestep.csv"        
-    ]
-
-    for i in fpL:
-        plotRewardByGeneration(
-            filepath = i,
-            fileName = "generationVsReward_extra.png",
-            yTop = 50
-        )
-
-    for i in fpL2:
-        plotRewardByGeneration(
-            filepath = i,
-            fileName = "generationVsReward_extra.png",
-            yTop = 50
-        )
-
-    plotMutationBehaviour(
-        filepath=fp,
-        initialRes=uniqueResi,
-                    title     = "Mutations over generations",
-                      addText   = True, 
-                      fileName  = "mutationBehaviour.png"
-    )
-
-    mutationFrequency(
-        filepath = fp,
-        fileName = "mutationFrequencyX.png"
-    )    
-
-    plotRewardByGeneration(
-        filepath = "log/residora/2023-Jun-19-1918_sub9_nm5_bs15_s42_ex16_mel10_mts100000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun/2023-Jun-19-1918_sub9_nm5_bs15_s42_ex16_mel10_mts100000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_timestep.csv",
-        fileName = "generationVsReward_extra.png",
-        yTop = 25
-    )
-    plotRewardByGeneration(
-        filepath = "log/residora/2023-Jun-19-1918_sub9_nm5_bs15_s42_ex16_mel10_mts100000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun/2023-Jun-19-1918_sub9_nm5_bs15_s42_ex16_mel10_mts100000_k30_ec035_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun.csv",
-        fileName = "generationVsReward_comp.png",
-        yTop = 100
-    )
-
-    plotRewardByGeneration(
-        filepath = "log/residora/2023-Jun-10-0707_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra3e-4_lrc1e-3/2023-Jun-10-0707_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra3e-4_lrc1e-3_timestep.csv",
-        fileName = "generationVsReward_extra.png",
-        yTop = 200
-    )
-
-    plotRewardByGeneration(
-        filepath = "log/residora/2023-Jun-11-0955_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc9e-3/2023-Jun-11-0955_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc9e-3_timestep.csv",
-        fileName = "generationVsReward_extra.png",
-        yTop = 200
-    )
-
-    filepath = "log/residora/2023-Jun-15-1604_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec035_g099_lra1e-3_lrc1e-2_LOCAL_nd8_ceAp-D/2023-Jun-15-1604_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec035_g099_lra1e-3_lrc1e-2_LOCAL_nd8_ceAp-D_timestep.csv"
-
-
     def makeAllPlots(fp):
         plotRewardByGeneration(
             filepath = fp,
@@ -322,7 +247,7 @@ if __name__ == "__main__":
              filepath = fp
         )     
         mutationFrequency(
-            filepath=fp,y
+            filepath=fp,
             fileName="mutationBehaviour.png"
         )
 
