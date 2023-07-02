@@ -99,6 +99,9 @@ target/
 #compressed stuff
 *.tar.gz
 
+#nohup files
+*.out
+
 # Data and models
 data/processed/*
 models/*
