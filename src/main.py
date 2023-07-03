@@ -54,6 +54,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
                   runIDExtension : str, 
                   transformerName: str = "facebook/esm2_t6_8M_UR50D", 
                   transformerDevice: str = "cuda:0",
+                  skipAAIfSameAsWildtype: bool = True,
                   gpu_vina: str = True,
                   vina_gpu_cuda_path: str = "/home/cewinharhar/GITHUB/Vina-GPU-2.0/Vina-GPU+/Vina_GPU", 
                   vina_path: str = "/home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64", 
@@ -381,10 +382,13 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
 
             #TODO decide wether to always choose first option
             #iterate over the predicted AA's (first ones have higher score), if the same as wildtype, skip
-            for idx, AA in enumerate(predictedAA):
-                if AA != originalAA:
-                    mutAA = AA
-                    break    
+            if skipAAIfSameAsWildtype == True:
+                for idx, AA in enumerate(predictedAA):
+                    if AA != originalAA:
+                        mutAA = AA
+                        break    
+            else:
+                mutAA = predictedAA[0]
 
             print(mutAA)
             #idx     = 0

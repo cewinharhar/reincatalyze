@@ -9,9 +9,10 @@ import os
 def visualizePipelineResults_single(csv_file, refSeq, catTriad = [167, 225, 169], group_size=25, outputFile = "mutation_visualization.png", sns_style = "white"):
     # Load the data
     if sns_style:
-        sns.set_style(sns_style)
+        sns.set_theme()
+        sns.set_style(style=sns_style)
     else:
-        sns.set_style()
+        sns.set_theme()
 
     amino_acid_colors = {
         "A": "green",   # Alanine
@@ -136,12 +137,11 @@ def visualizePipelineResults_single(csv_file, refSeq, catTriad = [167, 225, 169]
     plt.close()
 
 
-def visualizePipelineResults_multi(csv_file, refSeq, window_size= 100, yTop=30, yBot = 0, catTriad = [167, 225, 169], group_size=25, outputFile = "mutation_visualization.png", sns_style = "white"):
+def visualizePipelineResults_multi(csv_file, refSeq, window_size= 100, yTop=30, yBot = 0, catTriad = [167, 225, 169], group_size=25, outputFile = "mutation_visualization.png", sns_style = "whitegrid"):
     # Load the data
-    if sns_style:
-        sns.set_style(sns_style)
-    else:
-        sns.set_style()
+
+    sns.set_style(sns_style)
+
 
     amino_acid_colors = {
         "A": "green",   # Alanine
@@ -227,7 +227,7 @@ def visualizePipelineResults_multi(csv_file, refSeq, window_size= 100, yTop=30, 
     df_freq['y'] = df_freq['mutationResidue'].map(mutationResidue_to_y)
 
 
-    fig = plt.figure(figsize=(20,20))
+    fig = plt.figure(figsize=(20,21))
     gs = fig.add_gridspec(3, 2, height_ratios=[1, 2, 2], width_ratios=[3, 1])  # Adjust these numbers to fit your needs
 
     # Add mutBe plot on top
@@ -335,7 +335,7 @@ if __name__ == "__main__":
         window_size = 100,
         yTop = 20,
         yBot = -5,
-        sns_style=None
+        sns_style='whitegrid'
     )
     kwargs = dotdict(kwargs_)
 
@@ -347,5 +347,12 @@ if __name__ == "__main__":
     )
 
 
-    visualizePipelineResults_multi(csv_file=kwargs.csv_file, refSeq=kwargs.refSeq, group_size=kwargs.group_size, outputFile=kwargs.outputFile,window_size=kwargs.window_size, yTop=kwargs.yTop, yBot = kwargs.yBot)
+    visualizePipelineResults_multi(csv_file=r"C:\Users\kevin\ONEDRI~1\KEVINS~1\ZHAW\_PYTHO~1\_GITHUB\REINCA~1\log\residora\2023_J~4\2023-J~2\2023-J~2.CSV", 
+                                   refSeq=kwargs.refSeq, 
+                                   group_size=kwargs.group_size, 
+                                   outputFile="test.png",
+                                   window_size=kwargs.window_size, 
+                                   yTop=kwargs.yTop, 
+                                   yBot = kwargs.yBot,
+                                   sns_style=kwargs.sns_style)
 

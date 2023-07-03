@@ -1,0 +1,103 @@
+config1:
+  globalConfig:
+    runIDExtension: sub9_nm5_bs15_s42_ex32_mel10_mts500_k50_ec03_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_T8M_hl256_newScFun_ketalTarget_NOSKIPAA
+    transformerName: facebook/esm2_t6_8M_UR50D
+    transformerDevice: cuda:0    
+    skipAAIfSameAsWildtype: False
+    gpu_vina: true
+    vina_gpu_cuda_path: /home/cewinharhar/GITHUB/Vina-GPU-2.0/Vina-GPU+
+    vina_path: /home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64
+    autoDockScript_path: /home/cewinharhar/GITHUB/AutoDock-Vina/example/autodock_scripts
+    metal_containing: true
+    ligandNr: 8                 #which ligand to use 
+    neighborDistanceFromCenter4localMutation: 10  #if null, all AA's are beeing mutated. If float only the AA with X distance to defined center are beeing mutated
+    proteinCenter4localMutation: d # (e)nzyme = mass center, (d)ocked substrate= center of docked substrate, (m)etal= metal
+  
+  gaespConfig:
+    wildTypeAASeq: MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA
+    wildTypeStructurePath: data/raw/aKGD_FE_oxo_relaxed_metal.pdb
+    reference: data/raw/reference/reference.pdb
+    reference_ligand: data/raw/reference/reference_ligand_ketalTarget.pdb
+    thread: 8000
+    num_modes: 5
+    boxSize: 15
+    gaespSeed: 42
+    exhaustiveness: 32 
+    dockingTool: vinagpu   
+ 
+  pyroprolexConfig:
+    mutationApproach: pyrosetta
+  
+  residoraConfig:
+    multiAction: null              # how many position at once should deepMut introduce
+    max_ep_len: 10               #max timesteps in one episode
+    max_training_timesteps: 500  # break training loop if timeteps > max_training_timesteps
+    save_model_freq: 25         # save model frequency (in num timesteps)
+    K_epochs: 50                # update policy for K epochs
+    eps_clip: 0.3               # clip parameter for PPO
+    gamma: 0.99                 # discount factor
+    lr_actor: 0.0009            # learning rate for actor network
+    lr_critic: 0.009            # learning rate for critic network
+    residoraSeed: 13             # set random seed if required (0 : no random seed)
+
+    nrNeuronsInHiddenLayers: 
+      - 256                     #list format
+    activationFunction : tanh
+    useCNN          : False
+    stride          : 4         #only if useCNN true
+    kernel_size     : 6         #IF YOU CHANGE ABOVE 6 YOU LOOSE 2 DIMs
+    out_channel     : 2         #only if useCNN true
+    dropOutProb     : 0.01
+    residoraDevice  : cpu
+
+config2:
+  globalConfig:
+    runIDExtension: sub9_nm5_bs15_s42_ex32_mel10_mts500_k50_ec03_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_T35M_hl256_newScFun_ketalTarget_NOSKIPAA
+    transformerName: facebook/esm2_t12_35M_UR50D
+    transformerDevice: cuda:0    
+    skipAAIfSameAsWildtype: False
+    gpu_vina: true
+    vina_gpu_cuda_path: /home/cewinharhar/GITHUB/Vina-GPU-2.0/Vina-GPU+
+    vina_path: /home/cewinharhar/GITHUB/vina_1.2.3_linux_x86_64
+    autoDockScript_path: /home/cewinharhar/GITHUB/AutoDock-Vina/example/autodock_scripts
+    metal_containing: true
+    ligandNr: 8                 #which ligand to use 
+    neighborDistanceFromCenter4localMutation: 10  #if null, all AA's are beeing mutated. If float only the AA with X distance to defined center are beeing mutated
+    proteinCenter4localMutation: d # (e)nzyme = mass center, (d)ocked substrate= center of docked substrate, (m)etal= metal
+  
+  gaespConfig:
+    wildTypeAASeq: MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA
+    wildTypeStructurePath: data/raw/aKGD_FE_oxo_relaxed_metal.pdb
+    reference: data/raw/reference/reference.pdb
+    reference_ligand: data/raw/reference/reference_ligand_ketalTarget.pdb
+    thread: 8000
+    num_modes: 5
+    boxSize: 15
+    gaespSeed: 42
+    exhaustiveness: 32 
+    dockingTool: vinagpu   
+ 
+  pyroprolexConfig:
+    mutationApproach: pyrosetta
+  
+  residoraConfig:
+    multiAction: null              # how many position at once should deepMut introduce
+    max_ep_len: 10               #max timesteps in one episode
+    max_training_timesteps: 500  # break training loop if timeteps > max_training_timesteps
+    save_model_freq: 25         # save model frequency (in num timesteps)
+    K_epochs: 50                # update policy for K epochs
+    eps_clip: 0.3               # clip parameter for PPO
+    gamma: 0.99                 # discount factor
+    lr_actor: 0.0009            # learning rate for actor network
+    lr_critic: 0.009            # learning rate for critic network
+    residoraSeed: 13             # set random seed if required (0 : no random seed)
+
+    nrNeuronsInHiddenLayers: 
+      - 256                     #list format
+    activationFunction : tanh
+    useCNN          : False
+    stride          : 4         #only if useCNN true
+    kernel_size     : 6         #IF YOU CHANGE ABOVE 6 YOU LOOSE 2 DIMs
+    out_channel     : 2         #only if useCNN true
+    dropOutProb     : 0.01
+    residoraDevice  : cpu
