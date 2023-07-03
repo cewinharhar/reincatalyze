@@ -1,0 +1,31 @@
+Cliprange:
+	ec010: not good, too much exploitation
+	ec025: long exploitation not enough exploration, to much focus on V90
+	ec035: seems to have learning at the end, distributed exploration
+	
+	winner: ec035 2nd: ec030
+
+DeepMutSize:
+	35M: ended in stable plateau, weak exploration
+	150M: nice exploration
+	650M: very strong exploitation at V90, but interestingly the predicted amino acids changed which probably due to the bigger model which takes more influence from the surroudning amino acids
+
+
+LrRange:
+	a1, c1: interesting stable baseline between 400 & 600 generation with increased reward. Strong exploitation with weak exploration
+	a3, x3: strong exploration with medium exploitation, captured the interactio of resi 90+91 with substrate
+	a6, c6: very volatile rewards, good exploration & exploitation, but probably too much learning rate
+	a9, c9: interesting due to volatility and exploration & exploitation
+
+nr:Hidden (note ec0.3 & a9, c9)
+	128: very volatile with good exploratoin & exploitation, catches D81 which neighbors R81 which is very close to substrate, maybe has effect due to relaxation
+	256 (default): seems to learn (compared from cliprange with ec035)
+	512: Very volatile rewards with okay exploration & exploitation. I can imagine this could become better!
+	1024: after gen 400 model is stuck with D287A but its too far to interact with substrate. Maybe needs longer training
+	128_128: best so far, reaches very! stable baseline after gen400 and focuses on exploiting after having explored a 3000 timesteps
+	256_256: doesnt seem to learn anything (note: was trained over 1500 generations)
+
+to repeat: clip0.3, 0.4
+
+
+"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\REINCA~1\log\residora\2023_J~1\20FACB~1\2023-J~2.CSV"
