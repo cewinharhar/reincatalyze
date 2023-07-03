@@ -12,24 +12,24 @@ from pymol import cmd
 
 def plotRewardByGeneration(filepath, x_label='Generation', y_label='Reward', title='Reward vs Generation', window_size=100, yTop = None, fileName : str = None):
     # Read the CSV file with pandas
-    data = pd.read_csv(filepath)
+    df = pd.read_csv(filepath)
 
     # Calculate the rolling mean with the specified window size
-    nam1 = int(len(data) * 0.1)
-    nam2 = int(len(data) * 0.05)
-    data[f'reward_smooth_ws{window_size}'] = data['reward'].rolling(window=window_size, min_periods=1).mean()
-    data[f'reward_smooth_ws{nam1}'] = data['reward'].rolling(window= nam1, min_periods=1).mean()
-    data[f'reward_smooth_ws{nam2}'] = data['reward'].rolling(window=nam2, min_periods=1).mean()
+    nam1 = int(len(df) * 0.1)
+    nam2 = int(len(df) * 0.05)
+    df[f'reward_smooth_ws{window_size}'] = df['reward'].rolling(window=window_size, min_periods=1).mean()
+    df[f'reward_smooth_ws{nam1}'] = df['reward'].rolling(window= nam1, min_periods=1).mean()
+    df[f'reward_smooth_ws{nam2}'] = df['reward'].rolling(window=nam2, min_periods=1).mean()
 
     # Create a professional-looking plot using seaborn
     sns.set_theme(style='whitegrid')
 
     # Set up the main plot
     plt.figure(figsize=(24, 6))
-    _ = sns.lineplot(x='generation', y='reward', data=data, label='Reward')
-    _ = sns.lineplot(x='generation', y=f'reward_smooth_ws{window_size}', data=data, label=f'Smoothed Reward ws{window_size}', linestyle='--')
-    _ = sns.lineplot(x='generation', y=f'reward_smooth_ws{nam1}', data=data, label=f'Smoothed Reward ws{nam1}', linestyle='--')
-    _ = sns.lineplot(x='generation', y=f'reward_smooth_ws{nam2}', data=data, label=f'Smoothed Reward ws{nam2}', linestyle='--')
+    _ = sns.lineplot(x='generation', y='reward', data=df, label='Reward')
+    _ = sns.lineplot(x='generation', y=f'reward_smooth_ws{window_size}', data=df, label=f'Smoothed Reward ws{window_size}', linestyle='--')
+    _ = sns.lineplot(x='generation', y=f'reward_smooth_ws{nam1}', data=df, label=f'Smoothed Reward ws{nam1}', linestyle='--')
+    _ = sns.lineplot(x='generation', y=f'reward_smooth_ws{nam2}', data=df, label=f'Smoothed Reward ws{nam2}', linestyle='--')
 
     # Set labels and title
     _ = plt.xlabel(x_label)
