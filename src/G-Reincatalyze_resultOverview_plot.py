@@ -331,7 +331,7 @@ if __name__ == "__main__":
 
     kwargs_ = dict(
         refSeq = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA", # This should be the complete sequence
-        group_size = 25,
+        group_size = 1,
         window_size = 100,
         yTop = 20,
         yBot = -5,
@@ -347,10 +347,10 @@ if __name__ == "__main__":
     )
 
 
-    visualizePipelineResults_multi(csv_file=r"C:\Users\kevin\ONEDRI~1\KEVINS~1\ZHAW\_PYTHO~1\_GITHUB\REINCA~1\log\residora\2023_J~4\2023-J~2\2023-J~2.CSV", 
+    visualizePipelineResults_multi(csv_file=r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\REINCA~1\log\residora\2023-J~1\2023-J~2.CSV", 
                                    refSeq=kwargs.refSeq, 
                                    group_size=kwargs.group_size, 
-                                   outputFile="test.png",
+                                   outputFile="noSkipAA_G-Reincatalyze_resultOverview_withGrid.png",
                                    window_size=kwargs.window_size, 
                                    yTop=kwargs.yTop, 
                                    yBot = kwargs.yBot,

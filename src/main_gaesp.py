@@ -265,16 +265,20 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
         dockingResTable = vinaOutput
     )
 
+    print(f"VinaOutput: \n{vinaOutput}")
     #the reward is calculated so that the distance to the target carbon has the most influence
     mode, affinity, distance, RMSE = vinaOutput[vinaOutput.RMSE == vinaOutput.RMSE.min()].values[0]
+
+    print(f"mode: {mode}\naffinity: {affinity}\ndistance: {distance}\nRMSE: {RMSE}")
     
     #if distance < distanceTreshold:
     #    distFactor = distanceTreshold - distance
     #    reward = -1 * affinity * distFactor**2
 #    if RMSE < rmseTreshold and distance < distanceTreshold:
     if RMSE < rmseTreshold:
-        
+        print("RMSE smaller than treshold")
         reward = -1*affinity + (rmseTreshold - RMSE)**3
+        print(reward)
     else:
         reward = punishment
     #print(reward)
