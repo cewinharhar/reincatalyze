@@ -6,9 +6,13 @@ from matplotlib.lines import Line2D
 import os
 
 #------------------------------------------------------------------
-def visualizePipelineResults_single(csv_file, refSeq, catTriad = [167, 225, 169], group_size=25, outputFile = "mutation_visualization.png"):
+def visualizePipelineResults_single(csv_file, refSeq, catTriad = [167, 225, 169], group_size=25, outputFile = "mutation_visualization.png", sns_style = "white"):
     # Load the data
-    sns.set_style("white")
+    if sns_style:
+        sns.set_style(sns_style)
+    else:
+        sns.set_style()
+
     amino_acid_colors = {
         "A": "green",   # Alanine
         "C": "yellow",  # Cysteine
@@ -32,7 +36,7 @@ def visualizePipelineResults_single(csv_file, refSeq, catTriad = [167, 225, 169]
         "Y": "cyan"     # Tyrosine
     }
     
-    df = pd.read_csv(csv_file)
+    df = pd.read_csv(csv_file, engine="pyarrow")
     
     # Get unique 'mutationResidue' values
     unique_mutationResidue = np.sort(df["mutationResidue"].unique())
@@ -132,9 +136,12 @@ def visualizePipelineResults_single(csv_file, refSeq, catTriad = [167, 225, 169]
     plt.close()
 
 
-def visualizePipelineResults_multi(csv_file, refSeq, window_size= 100, yTop=30, yBot = 0, catTriad = [167, 225, 169], group_size=25, outputFile = "mutation_visualization.png"):
+def visualizePipelineResults_multi(csv_file, refSeq, window_size= 100, yTop=30, yBot = 0, catTriad = [167, 225, 169], group_size=25, outputFile = "mutation_visualization.png", sns_style = "white"):
     # Load the data
-    sns.set_style("white")
+    if sns_style:
+        sns.set_style(sns_style)
+    else:
+        sns.set_style()
 
     amino_acid_colors = {
         "A": "green",   # Alanine
@@ -285,14 +292,60 @@ def visualizePipelineResults_multi(csv_file, refSeq, window_size= 100, yTop=30, 
     plt.savefig(output_path, dpi=300)
     plt.close()
 
+def apply_function_to_csvs(root_path, folder_names, functionX, **kwargs):
+    # Loop over each folder
+    for iter, folder_name in enumerate(folder_names):
+        # Construct full folder path
+        full_folder_path = os.path.join(root_path, folder_name)
+
+        # If path does not exist or it's not a directory, skip it
+        if not os.path.exists(full_folder_path) or not os.path.isdir(full_folder_path):
+            print(f"Skipping {full_folder_path}. This is not a valid directory.")
+            continue
+        print(f"folder: {iter}/{len(folder_names)}")
+        # Loop over each subdirectory
+        for subdir, dirs, files in os.walk(full_folder_path):
+            # Find all csv files in the subdirectory ending with timestep.CSV
+            csv_files = glob.glob(os.path.join(subdir, '*timestep.CSV'))
+
+            # Apply your function to each csv file
+            for iterCsv, csv_file in enumerate(csv_files):
+                print(f"csvFile: {iterCsv}/{len(csv_files)}")
+                functionX(
+                    csv_file=csv_file,
+                    outputFile=f"{folder_name}_G-Reincatalyze_resultOverview_withGrid.png",
+                    **kwargs
+                )
+
 
 if __name__ == "__main__":
 
-    csv_file = r"C:\Users\kevin\ONEDRI~1\KEVINS~1\ZHAW\_PYTHO~1\_GITHUB\REINCA~1\log\residora\2023_J~4\2023-J~1\2023-J~2.CSV"
-    refSeq = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA" # This should be the complete sequence
-    group_size = 25
-    outputFile = "2023-Jun-23-2006_G-Reincatalyze_resultOverview.png"
-    window_size = 100
-    yTop = 20
-    yBot = -5
-    visualizePipelineResults_multi(csv_file=csv_file, refSeq=refSeq, group_size=group_size, outputFile=outputFile,window_size=window_size, yTop=yTop, yBot = yBot)
+    import os
+    import glob
+    from src.dotdict import dotdict
+
+
+    # Usage:
+    # apply_function_to_csvs("/my/root/path", ["folder1", "folder2", "folder3"], my_csv_processing_function)
+
+
+    kwargs_ = dict(
+        refSeq = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA", # This should be the complete sequence
+        group_size = 25,
+        window_size = 100,
+        yTop = 20,
+        yBot = -5,
+        sns_style=None
+    )
+    kwargs = dotdict(kwargs_)
+
+    apply_function_to_csvs(
+        root_path=r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\reincatalyze\log\residora",
+        folder_names=["2023_June_cliprange", "2023_June_deepMutSize", "2023_June_lrRange", "2023_June_nrHidden"],
+        functionX=visualizePipelineResults_multi,
+        **kwargs
+    )
+
+
+    visualizePipelineResults_multi(csv_file=kwargs.csv_file, refSeq=kwargs.refSeq, group_size=kwargs.group_size, outputFile=kwargs.outputFile,window_size=kwargs.window_size, yTop=kwargs.yTop, yBot = kwargs.yBot)
+
