@@ -387,12 +387,14 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
                     if AA != originalAA:
                         mutAA = AA
                         break    
-            else:
-                mutAA = predictedAA[0]
+            else:                
+                mutAA = AA = predictedAA[0]
+                
+            print(f"mutAA {mutAA}")
 
-            print(mutAA)
             #idx     = 0
             #mutAA   = predictedAA[idx]   
+            #this list comprehension ensures functionality if multiAction is enabled. 
             embedSeq    = [AA[action.index(idx)] if idx in action else elem for idx, elem in enumerate(seq)]
             embedSeq    = "".join(embedSeq)
             print(embedSeq)
