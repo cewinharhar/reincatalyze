@@ -267,7 +267,7 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
 
     print(f"VinaOutput: \n{vinaOutput}")
     #the reward is calculated so that the distance to the target carbon has the most influence
-    mode, affinity, distance, RMSE = vinaOutput[vinaOutput.RMSE == vinaOutput.RMSE.min()].values[0]
+    mode, affinity, RMSE, distance = vinaOutput[vinaOutput.RMSE == vinaOutput.RMSE.min()].values[0]
 
     print(f"mode: {mode}\naffinity: {affinity}\ndistance: {distance}\nRMSE: {RMSE}")
     
