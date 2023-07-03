@@ -1,7 +1,7 @@
 config1:
   globalConfig:
-    runIDExtension: sub9_nm5_bs15_s42_ex32_mel10_mts500_k50_ec03_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_T8M_hl256_newScFun_ketalTarget_NOSKIPAA
-    transformerName: facebook/esm2_t6_8M_UR50D
+    runIDExtension: sub9_nm5_bs15_s42_ex32_mel10_mts500_k50_ec03_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_T650M_hl256_newScFun_ketalTarget_NOSKIPAA
+    transformerName: facebook/esm2_t33_650M_UR50D
     transformerDevice: cuda:0    
     skipAAIfSameAsWildtype: False
     gpu_vina: true
@@ -53,7 +53,7 @@ config1:
 config2:
   globalConfig:
     runIDExtension: sub9_nm5_bs15_s42_ex32_mel10_mts500_k50_ec03_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_T35M_hl256_newScFun_ketalTarget_NOSKIPAA
-    transformerName: facebook/esm2_t12_35M_UR50D
+    transformerName: facebook/esm2_t36_3B_UR50D
     transformerDevice: cuda:0    
     skipAAIfSameAsWildtype: False
     gpu_vina: true
