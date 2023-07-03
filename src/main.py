@@ -7,6 +7,7 @@ from pprint import pprint
 from copy import deepcopy
 from typing import List, Tuple
 import yaml
+import subprocess
 
 import torch
 
@@ -33,7 +34,7 @@ from src.residoraHelpers.convNet import convNet
 from src.residoraHelpers.ActorCritic import ActorCritic
 from src.residoraHelpers.PPO import PPO
 
-from src.main_postProcessing import plotRewardByGeneration, plotMutationBehaviour, mutation_summary, mutationFrequency
+from src.GReincatalyze_resultOverview_plot import visualizePipelineResults_multi
 
 #from src.main_deepMut import main_deepMut
 #from src.main_pyroprolex import main_pyroprolex
@@ -218,6 +219,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
         )
         resIdList.sort()
         residoraResMap = dict(zip(range(action_dim), resIdList))
+        print(f"ResidoraResMap: {residoraResMap}")
 
 
 
@@ -388,6 +390,7 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
                         mutAA = AA
                         break    
             else:                
+                print(f"predictedAA: {predictedAA}")
                 mutAA = AA = predictedAA[0]
                 
             print(f"mutAA {mutAA}")
@@ -525,33 +528,38 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
 
     #---------------------------------------
     # ----------- PostProcess --------------
-    plotRewardByGeneration(filepath = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 
-                            title="Reward over generations",
-                            window_size = 100, 
-                            yTop = 50,
-                            fileName="generationVsReward.png")
-    
-    plotMutationBehaviour(filepath  = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 
-                      title     = "Mutations over generations",
-                      addText   = True, 
-                      initialRes = resIdList,
-                      fileName  = "mutationBehaviour.png")
-    
-    summaryTable = mutation_summary(filepath = pj(residoraConfig["log_dir"], runID + "_timestep.csv"), 
-                                 output_filename='mutation_summary.csv')
-
     try:
-        mutationFrequency(
-            filepath = pj(residoraConfig["log_dir"], runID + "_timestep.csv"),
-            fileName = "mutationFrequency.png"
-        )    
+        visualizePipelineResults_multi(
+            csv_file= pj(residoraConfig["log_dir"], runID + "_timestep.csv"),
+            refSeq =  wildTypeAASeq,
+            group_size=25,
+            outputFile= "G-Reincatalyze_resultOverview_withGrid.png",
+            window_size=100,
+            yTop=100,
+            yBot=0,
+            sns_style="whitegrid"
+        )        
+
     except:
-        print("mutFreqPlot did not work")
-            
+        print("plotting didnt work")
     
     ### EXPORT MUTANTCLASS & CONFIG FILE
     mutants.export_to_json(pj(residoraConfig["log_dir"], runID + "_mutantClass.json"))
     config.export_to_json(pj(residoraConfig["log_dir"], runID + "_config.json"))
+
+    compressDirPath = pj(config.data_dir, "processed",  "docking_pred", config.runID)
+
+    # Run the bash command
+    try:
+        command = f'tar -zcf "{compressDirPath}.tar.gz" "{compressDirPath}"'
+        subprocess.run(command, shell=True)    
+    except Exception as err:
+        print(err)
+        return
+
+    command = f'rm -rf "{compressDirPath}"'
+    subprocess.run(command, shell=True)    
+
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

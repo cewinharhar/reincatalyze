@@ -32,6 +32,8 @@ def esm2_getPred(sequence : str, residIdx : List, classifier = None):
 
 if __name__ == "__main__":
     sequence = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA"
-    AA      = ["W", "S", "A"]
-    action  = [1, 2, 250]
+    AA      = ["H", "D", "H"]
+    action  = [166, 168, 224]
     embedSeq= [AA[action.index(idx)] if idx in action else elem for idx, elem in enumerate(sequence)]
+
+    #esm2_getPred(sequence=sequence, residIdx=action)

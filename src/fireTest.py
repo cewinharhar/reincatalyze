@@ -233,3 +233,7 @@ HeatmapPlotter(
     embedder    = pipeline("feature-extraction", model=transformerName, top_k = 5, device = 0) 
     embedder("MSTETLRLQKARATEEGLAFETPGGLTRA")
 
+
+    df = pd.read_csv(r"C:\Users\kevin\ONEDRI~1\KEVINS~1\ZHAW\_PYTHO~1\_GITHUB\REINCA~1\log\residora\2023-J~1\2023-J~2.CSV")
+
+    df[df.generation == 6]

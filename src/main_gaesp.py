@@ -253,8 +253,8 @@ def main_gaesp(generation : int, episode: int, mutID : str, mutantClass_ : mutan
 
     vinaOutput["distTargetCarbonToFE"] = distances
     
-    print(f" \n Vina-GPU+ output: \n \n {vinaOutput}")  
-    print(f"Number of results: {nrOfVinaPred}")    
+    #print(f" \n Vina-GPU+ output: \n \n {vinaOutput}")  
+    #print(f"Number of results: {nrOfVinaPred}")    
 
     #save results in corresponding mutantclass subdict
     mutantClass_.addDockingResult(

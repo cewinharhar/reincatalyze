@@ -8,8 +8,6 @@ from os.path import join as pj
 from typing import List
 import subprocess
 
-from pymol import cmd
-
 def plotRewardByGeneration(filepath, x_label='Generation', y_label='Reward', title='Reward vs Generation', window_size=100, yTop = None, fileName : str = None):
     # Read the CSV file with pandas
     df = pd.read_csv(filepath)
@@ -51,11 +49,7 @@ def plotRewardByGeneration(filepath, x_label='Generation', y_label='Reward', tit
         _ = plt.savefig(plot_path)
         print(f"Plot saved at {plot_path}")
 
-# Example usage
-""" plotRewardByGeneration(filepath = '/home/cewinharhar/GITHUB/reincatalyze/log/residora/2023-Apr-25-1617_test/2023-Apr-25-1617_test_timestep.csv', 
-                        title="Reward over generations",
-                        window_size = 50, 
-                        fileName="test.png") """
+
 
 
 def plotMutationBehaviour(filepath, fileName : str = "mutationBehaviour.png", initialRes: List = None, x_label='Generation', y_label='Mutation Position', title='Mutation Behavior', addText : bool = False, fontsize : float = 7.5):
@@ -93,11 +87,7 @@ def plotMutationBehaviour(filepath, fileName : str = "mutationBehaviour.png", in
         plt.savefig(plot_path)
         print(f"Plot saved at {plot_path}")
 
-# Example usage
-""" plotMutationBehaviour(filepath  = 'log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07_timestep.csv', 
-                      title     = "Mutations over generations",
-                      addText   = False, 
-                      fileName  = "mutationBehaviour") """
+
 
 def mutationFrequency(filepath, fileName, originalSeq = 'MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA'):
     # Load the CSV file into a pandas DataFrame
@@ -183,100 +173,8 @@ def mutation_summary(filepath: str, output_filename=None):
     return summary_table
 
 
-def pymolMovie(csvPath, pdbPath):
-    # Load the data
-    df = pd.read_csv(csvPath)
-    df = df.iloc[:250,:]
-
-    # Load your structure into pymol
-    cmd.load(pdbPath)
-
-    # Create the movie
-    total_frames = df['generation'].nunique()
-
-    nrow = len(df)
-
-    # Initialize a dict to keep track of current generation and frame
-    current_generation = {'generation': None, 'frame': 1}
-
-    for index, row in df.iterrows():
-        print(f"({index}/{nrow})", end = "\r")
-        if row['generation'] != current_generation['generation']:
-            # Create a new state for a new generation
-            current_generation['generation'] = row['generation']
-            cmd.create(f'state_{current_generation["frame"]}', 'all', 1, current_generation['frame'])
-            cmd.frame(current_generation['frame'])
-            cmd.hide('spheres', 'all')
-            cmd.color('white', 'all')  # Reset color to default white
-            current_generation['frame'] += 1
-
-        # Select the residue to mutate
-        selection = f'resi {row["mutationResidue"]}'
-        
-        # Color the selected residue
-        _ = cmd.color('red', selection)
-
-        # Now make it more visually distinct by showing it as a sphere
-        #_ = cmd.show('spheres', selection)
-
-    # Set the total number of frames for the movie
-#    cmd.mset(f'1 x{total_frames}')
-    cmd.mset(f'1 x{nrow}')
-
-    # Rewind to the first frame
-    cmd.frame(1)
-
-    cmd.mpng('data/wasteBin/movie_frames.png')
-
-    command = """ffmpeg -r 10 -i /home/cewinharhar/GITHUB/reincatalyze/data/wasteBin/movie_frames%04d.png -c:v libx264 -vf "fps=25,format=yuv420p" /home/cewinharhar/GITHUB/reincatalyze/data/wasteBin/movie.mp4"""
-    ps = subprocess.Popen([command],shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
-    stdout, stderr = ps.communicate()    
-
-    #cmd.mplay()
-
-
 if __name__ == "__main__":
 
-    def makeAllPlots(fp):
-        plotRewardByGeneration(
-            filepath = fp,
-            fileName = "generationVsReward_extra.png",
-            yTop = 25,
-        )   
-        plotMutationBehaviour(
-             filepath = fp
-        )     
-        mutationFrequency(
-            filepath=fp,
-            fileName="mutationBehaviour.png"
-        )
-
-
-
-    fp = "/home/cewinharhar/GITHUB/reincatalyze/log/residora/2023-Jun-28-1427_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec04_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget/2023-Jun-28-1427_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec04_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_newScFun_ketalTarget_timestep.csv"    
-    makeAllPlots(fp)
 
     
 
-""" # Example usage
-summary_table = mutation_summary('log/residora/2023_Apr_20-15:07/2023_Apr_20-15:07_timestep.csv', 
-                                 output_filename='mutation_summary.csv')
-print(summary_table)
-
-selRes = summary_table.mutationResidue.tolist()[0:10]
-"+".join([str(x) for x in selRes])
-
-
-data = pd.read_csv('log/residora/2023-May-24-1506_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec02_g099_lra3e-4_lrc3e-3/2023-May-24-1506_sub9_nm5_bs15_s42_ex16_mel10_mts10000_k50_ec02_g099_lra3e-4_lrc3e-3.csv')
-
-data[data.reward == data.reward.max()]
-
-
-
-selRes = data[data.generation == 501].mutationResidue.tolist()
-"+".join([str(x) for x in selRes]) """
-
-""" data = pd.read_csv("/home/cewinharhar/GITHUB/reincatalyze/log/residora/2023-Apr-25-2248_maxeplen10_maxtrainstep1000_exh16_gamma099_lrac3e-4_lrcr1e-3/2023-Apr-25-2248_maxeplen10_maxtrainstep1000_exh16_gamma099_lrac3e-4_lrcr1e-3_timestep.csv")
-
-selRes = data[(data.reward>250) & (data.generation == 100)].mutationResidue.tolist()
-"+".join([str(x) for x in selRes]) """

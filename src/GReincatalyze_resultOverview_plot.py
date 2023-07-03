@@ -38,6 +38,9 @@ def visualizePipelineResults_single(csv_file, refSeq, catTriad = [167, 225, 169]
     }
     
     df = pd.read_csv(csv_file, engine="pyarrow")
+    #-------------------------------------------------------------------------------------------
+    df.mutationResidue = df.mutationResidue + 1 
+    #-------------------------------------------------------------------------------------------    
     
     # Get unique 'mutationResidue' values
     unique_mutationResidue = np.sort(df["mutationResidue"].unique())
@@ -181,6 +184,10 @@ def visualizePipelineResults_multi(csv_file, refSeq, window_size= 100, yTop=30, 
 
     #Processing second plot row
 
+    #Add 1 to each residue because python starts with 0
+    #-------------------------------------------------------------------------------------------
+    df.mutationResidue = df.mutationResidue + 1 
+    #-------------------------------------------------------------------------------------------
    # Get unique 'mutationResidue' values
     unique_mutationResidue = np.sort(df["mutationResidue"].unique())
     
@@ -333,7 +340,7 @@ if __name__ == "__main__":
         refSeq = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA", # This should be the complete sequence
         group_size = 1,
         window_size = 100,
-        yTop = 20,
+        yTop = 100,
         yBot = -5,
         sns_style='whitegrid'
     )
@@ -347,7 +354,7 @@ if __name__ == "__main__":
     )
 
 
-    visualizePipelineResults_multi(csv_file=r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\REINCA~1\log\residora\2023-J~1\2023-J~2.CSV", 
+    visualizePipelineResults_multi(csv_file=r"C:\Users\kevin\ONEDRI~1\KEVINS~1\ZHAW\_PYTHO~1\_GITHUB\REINCA~1\log\residora\2023-J~1\2023-J~2.CSV", 
                                    refSeq=kwargs.refSeq, 
                                    group_size=kwargs.group_size, 
                                    outputFile="noSkipAA_G-Reincatalyze_resultOverview_withGrid.png",
