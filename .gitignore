@@ -95,13 +95,13 @@ target/
 
 #MOL
 *.mol
-
+*.mol2
 #compressed stuff
 *.tar.gz
 
 #nohup files
 *.out
-nohup.out
+*/*/nohup.out
 # Data and models
 data/processed/*
 models/*
