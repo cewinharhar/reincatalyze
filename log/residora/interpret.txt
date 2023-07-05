@@ -1,0 +1,8 @@
+what can to delete 3d:
+	- c01, c02
+	- 256
+	- 256_128
+
+what to repeat
+	- TSize
+	- Mix
