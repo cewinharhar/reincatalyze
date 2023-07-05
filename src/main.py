@@ -548,17 +548,19 @@ def main_Pipeline(runID: str = None, *configUnpack, #this unpacks all the variab
     config.export_to_json(pj(residoraConfig["log_dir"], runID + "_config.json"))
 
     compressDirPath = pj(config.data_dir, "processed",  "docking_pred", config.runID)
+    compressDirPath3D = pj(config.data_dir, "processed",  "3D_pred", config.runID)
 
     # Run the bash command
-    try:
-        command = f'tar -zcf "{compressDirPath}.tar.gz" "{compressDirPath}"'
-        subprocess.run(command, shell=True)    
-    except Exception as err:
-        print(err)
-        return
+    for pathi in [compressDirPath, compressDirPath3D]:
+        try:
+            command = f'tar -zcf "{pathi}.tar.gz" "{pathi}"'
+            subprocess.run(command, shell=True)    
 
-    command = f'rm -rf "{compressDirPath}"'
-    subprocess.run(command, shell=True)    
+            commandrm = f'rm -rf "{pathi}"'
+            subprocess.run(commandrm, shell=True)    
+        except Exception as err:
+            print(err)
+
 
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////////
