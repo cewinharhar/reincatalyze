@@ -138,18 +138,20 @@ def HeatmapPlotter(heatmap_file_InFun, excel_choice_InFun, heatmap_folder,
         for label in cbar.ax.xaxis.get_ticklabels()[::2]:
             label.set_visible(True)
         fig.tight_layout()
-        fig.savefig(name_save + ".jpeg" , format='jpeg', dpi=500)
+        savePathi = name_save + ".jpeg" 
+        fig.savefig(savePathi, format='jpeg', dpi=500)
         #plt.show()
-        print("your file has been saved. Have a nice day :)")
+        print(f"your file has been saved in \n {savePathi}\n. Have a nice day :)")
 
     elif ausrichtung == 'vertical':
         plt.figure(figsize=(10, 30))
         fig, ax = plt.subplots()
         im, cbar = heatmap(data_matrix, sca, sub, ax=ax, cmap=cmap, cbarlabel="Transformation [mM]", vmin=0, vmax=int(round(np.max(data_matrix)+0.5)))
         fig.tight_layout()
-        fig.savefig(save +"\\"+ name_save + ".jpeg", format='jpeg', dpi=2000)
+        savePathi = save +"\\"+ name_save + ".jpeg"
+        fig.savefig(savePathi, format='jpeg', dpi=2000)
         plt.show()
-        print("your file has been saved. Have a nice day :)")
+        print(f"your file has been saved in \n {savePathi}\n. Have a nice day :)")
     else: pass
 
 
@@ -205,35 +207,20 @@ if __name__ == "__main__":
     len("S65R_L75P_F80D_G146S_T280R_D283G_F288L".split("_"))
 
     #------------------------------------------------
-pi =r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\MASTER\MASTERARBEIT\JOURNAL\OD_forMA.csv"
+
+pi =r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\MASTER\MASTERARBEIT\JOURNAL\SDS_forMA.csv"
 
 #create OD plot
 HeatmapPlotter(
     heatmap_file_InFun=pi,
     excel_choice_InFun=False,
     heatmap_folder = r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\MASTER\MASTERARBEIT\JOURNAL",
-    heatmap_name="OD_MA",
+    heatmap_name="SDS_MA",
     delimiter_heatmap_InFun=";",
     heatmap_orientation="horizontal",
-    colorbarTitle = "OD_600",
-    cmap = "copper_r",
+    colorbarTitle = "Expression",
+    #cmap = "copper_r",
+    cmap = 'PiYG',
     colorBarXTickerBase = 0.5
 )
 
-
-    from transformers import pipeline
-
-    transformerName = "facebook/esm2_t12_35M_UR50D"
-    classifier  = pipeline("fill-mask", model=transformerName, device="cuda:0")
-    classifierCPU  = pipeline("fill-mask", model=transformerName, device=0)
-
-    classifier("MSTETLRLQKARATEEGLAFETP<mask>GGLTRA")
-    classifierCPU("MSTETLRLQKARATEEGLAFETP<mask>GGLTRA")
-
-    embedder    = pipeline("feature-extraction", model=transformerName, top_k = 5, device = 0) 
-    embedder("MSTETLRLQKARATEEGLAFETPGGLTRA")
-
-
-    df = pd.read_csv(r"C:\Users\kevin\ONEDRI~1\KEVINS~1\ZHAW\_PYTHO~1\_GITHUB\REINCA~1\log\residora\2023-J~1\2023-J~2.CSV")
-
-    df[df.generation == 6]

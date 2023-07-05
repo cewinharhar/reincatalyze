@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.lines import Line2D
 import os
+import glob
+from src.dotdict import dotdict
 
 #------------------------------------------------------------------
 def visualizePipelineResults_single(csv_file, refSeq, catTriad = [167, 225, 169], group_size=25, outputFile = "mutation_visualization.png", sns_style = "white"):
@@ -327,10 +329,6 @@ def apply_function_to_csvs(root_path, folder_names, functionX, **kwargs):
 
 if __name__ == "__main__":
 
-    import os
-    import glob
-    from src.dotdict import dotdict
-
 
     # Usage:
     # apply_function_to_csvs("/my/root/path", ["folder1", "folder2", "folder3"], my_csv_processing_function)
@@ -338,17 +336,34 @@ if __name__ == "__main__":
 
     kwargs_ = dict(
         refSeq = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA", # This should be the complete sequence
-        group_size = 1,
+        group_size = 25,
         window_size = 100,
-        yTop = 100,
+        yTop = 20,
         yBot = -5,
         sns_style='whitegrid'
     )
     kwargs = dotdict(kwargs_)
 
     apply_function_to_csvs(
-        root_path=r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\reincatalyze\log\residora",
+        root_path=r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\reincatalyze\log\residora\target_alphaCarbon",
         folder_names=["2023_June_cliprange", "2023_June_deepMutSize", "2023_June_lrRange", "2023_June_nrHidden"],
+        functionX=visualizePipelineResults_multi,
+        **kwargs
+    )
+
+    kwargs_ = dict(
+        refSeq = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA", # This should be the complete sequence
+        group_size = 1,
+        window_size = 100,
+        yTop = 20,
+        yBot = -5,
+        sns_style='whitegrid'
+    )
+    kwargs = dotdict(kwargs_)
+
+    apply_function_to_csvs(
+        root_path=r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\reincatalyze\log\residora\target_alphaCarbon",
+        folder_names=["2023_July_noSkipAA"],
         functionX=visualizePipelineResults_multi,
         **kwargs
     )
