@@ -95,7 +95,7 @@ target/
 
 #MOL
 *.mol
-
+*.mol2
 #compressed stuff
 *.tar.gz
 
