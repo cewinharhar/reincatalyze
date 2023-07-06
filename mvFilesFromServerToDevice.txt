@@ -1,1 +1,4 @@
-scp cewinharhar@neuron:/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/2023-Jun-08-0949_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec05_g099_lra9e-4_lrc1e-3/a991e05863b38587be5f018959c733685726fb49_gen3_ep6_4_superimposed.pdb E:/
+scp cewinharhar@neuron:/home/cewinharhar/GITHUB/reincatalyze/data/processed/3D_pred/2023-Jul-03-2144_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra1e-4_lrc1e-3_LOCAL_nd10_ceAp-D_multi0_T8M_hl128_128/05447a19ac12fae4dde93fbd97fba48fb3a095ca_gen224_ep10_4_superimposed.pdb E:/
+
+
+scp cewinharhar@neuron:/home/cewinharhar/GITHUB/reincatalyze/log/residora/2023-Jul-03-2144_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra1e-4_lrc1e-3_LOCAL_nd10_ceAp-D_multi0_T8M_hl128_128/2023-Jul-03-2144_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra1e-4_lrc1e-3_LOCAL_nd10_ceAp-D_multi0_T8M_hl128_128_mutantClass.json E:/
