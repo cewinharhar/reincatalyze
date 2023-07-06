@@ -209,18 +209,19 @@ if __name__ == "__main__":
     #------------------------------------------------
 
 pi =r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\MASTER\MASTERARBEIT\JOURNAL\SDS_forMA.csv"
+pi =r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\MASTER\MASTERARBEIT\JOURNAL\OD_forMA.csv"
 
 #create OD plot
 HeatmapPlotter(
     heatmap_file_InFun=pi,
     excel_choice_InFun=False,
     heatmap_folder = r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\MASTER\MASTERARBEIT\JOURNAL",
-    heatmap_name="SDS_MA",
+    heatmap_name="OD_MA",
     delimiter_heatmap_InFun=";",
     heatmap_orientation="horizontal",
-    colorbarTitle = "Expression",
-    #cmap = "copper_r",
-    cmap = 'PiYG',
+    colorbarTitle = "OD_600",
+    cmap = "copper_r",
+    #cmap = 'PiYG',
     colorBarXTickerBase = 0.5
 )
 
