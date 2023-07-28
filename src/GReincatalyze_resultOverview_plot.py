@@ -6,6 +6,7 @@ from matplotlib.lines import Line2D
 import os
 import glob
 from src.dotdict import dotdict
+from pprint import pprint
 
 #------------------------------------------------------------------
 def visualizePipelineResults_single(csv_file, refSeq, catTriad = [167, 225, 169], group_size=25, outputFile = "mutation_visualization.png", sns_style = "white"):
@@ -327,6 +328,68 @@ def apply_function_to_csvs(root_path, folder_names, functionX, **kwargs):
                 )
 
 
+def get_max_rewards(directory_list, filterReward = 100, filterAbove = True, min_ = False, withAA=True):
+    result_dict = {}
+    uniqueAA = set()
+    for directory in directory_list:
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                if file.endswith("_timestep.csv"):
+                    data = pd.read_csv(os.path.join(root, file))
+                    data.mutationResidue = data.mutationResidue+1
+                    
+                    # get the generation(s) with the max rewar
+                    if filterAbove:
+                        if len(data[data.reward > filterReward]) == 0:
+                            break
+
+                    
+                    max_reward_gen = data[data['reward'] == data['reward'].max()]['generation'].unique().tolist()
+                    # get all rows for those generation(s)
+                    max_reward_rows = data[data['generation'].isin(max_reward_gen)]
+                    max_reward_index = max_reward_rows['reward'].idxmax()
+
+                    # Subset the DataFrame
+                    max_reward_rows_sub = max_reward_rows.loc[:max_reward_index].reset_index(drop=True)     
+                    
+                    identical_rows = max_reward_rows_sub[max_reward_rows_sub["oldAA"] == max_reward_rows_sub["newAA"]]
+                    # Drop those rows
+                    max_reward_rows_sub_sub = max_reward_rows_sub.drop(identical_rows.index)                                   
+
+                    max_reward_rows_sub_sub["mutation"] = max_reward_rows_sub_sub['oldAA'].astype(str) + max_reward_rows_sub_sub['mutationResidue'].astype(str) + max_reward_rows_sub_sub['newAA'].astype(str)
+
+                    if withAA:
+                        uniqueAA.update(max_reward_rows_sub_sub.mutation.tolist())
+                        
+                        for gen in max_reward_gen:
+                            key = file.replace('_timestep.csv', '') + "_gen" + str(gen)
+                            result_dict[key] = max_reward_rows_sub_sub[max_reward_rows_sub_sub['generation'] == gen].mutation.tolist()
+                    else:
+
+                        uniqueAA.update(max_reward_rows_sub_sub.mutationResidue.tolist())
+                        
+                        for gen in max_reward_gen:
+                            key = file.replace('_timestep.csv', '') + "_gen" + str(gen)
+                            result_dict[key] = max_reward_rows_sub_sub[max_reward_rows_sub_sub['generation'] == gen].mutationResidue.tolist()
+                        
+    return result_dict, uniqueAA
+      
+def create_co_occur_matrix(result_dict):
+    # Get all unique mutationResidues across all generations
+    mutation_residues = np.unique([item for sublist in result_dict.values() for item in sublist])
+
+    # Create an empty DataFrame for the co-occurrence matrix
+    co_occur = pd.DataFrame(np.zeros((len(mutation_residues), len(mutation_residues))), index=mutation_residues, columns=mutation_residues)
+
+    # Calculate co-occurrences
+    for mutation_list in result_dict.values():
+        for i in mutation_list:
+            for j in mutation_list:
+                if i != j:
+                    co_occur.loc[i, j] += 1
+
+    return co_occur
+
 if __name__ == "__main__":
 
 
@@ -338,8 +401,8 @@ if __name__ == "__main__":
         refSeq = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA", # This should be the complete sequence
         group_size = 25,
         window_size = 100,
-        yTop = 20,
-        yBot = -5,
+        yTop = 100,
+        yBot = 0,
         sns_style='whitegrid'
     )
     kwargs = dotdict(kwargs_)
@@ -369,12 +432,72 @@ if __name__ == "__main__":
     )
 
 
-    visualizePipelineResults_multi(csv_file=r"C:\Users\kevin\ONEDRI~1\KEVINS~1\ZHAW\_PYTHO~1\_GITHUB\REINCA~1\log\residora\2023-J~1\2023-J~2.CSV", 
+
+    kwargs_ = dict(
+        refSeq = "MSTETLRLQKARATEEGLAFETPGGLTRALRDGCFLLAVPPGFDTTPGVTLCREFFRPVEQGGESTRAYRGFRDLDGVYFDREHFQTEHVLIDGPGRERHFPPELRRMAEHMHELARHVLRTVLTELGVARELWSEVTGGAVDGRGTEWFAANHYRSERDRLGCAPHKDTGFVTVLYIEEGGLEAATGGSWTPVDPVPGCFVVNFGGAFELLTSGLDRPVRALLHRVRQCAPRPESADRFSFAAFVNPPPTGDLYRVGADGTATVARSTEDFLRDFNERTWGDGYADFGIAPPEPAGVAEDGVRA", # This should be the complete sequence
+        group_size = 25,
+        window_size = 100,
+        yTop = 100,
+        yBot = 0,
+        sns_style='whitegrid'
+    )
+    kwargs = dotdict(kwargs_)
+
+    visualizePipelineResults_multi(csv_file=r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\REINCA~1\log\residora\209C01~1\2023-J~2.CSV", 
                                    refSeq=kwargs.refSeq, 
                                    group_size=kwargs.group_size, 
-                                   outputFile="noSkipAA_G-Reincatalyze_resultOverview_withGrid.png",
+                                   outputFile="G-Reincatalyze_resultOverview_withGrid_.png",
                                    window_size=kwargs.window_size, 
                                    yTop=kwargs.yTop, 
                                    yBot = kwargs.yBot,
                                    sns_style=kwargs.sns_style)
 
+dirList = [
+    r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\reincatalyze\log\residora\clipRange",
+    r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\reincatalyze\log\residora\lrRange",
+    r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\reincatalyze\log\residora\nrHidden",
+    r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\reincatalyze\log\residora\TSize",
+    r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\reincatalyze\log\residora\2023-Jul-06-0612_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_T150M_hl128_128",
+    r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\reincatalyze\log\residora\2023-Jul-06-0302_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_T8M_hl128",
+    r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\reincatalyze\log\residora\2023-Jul-05-1613_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec035_g099_lra3e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_T35M_hl128_128",
+    r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\reincatalyze\log\residora\2023-Jul-06-0302_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec015_g099_lra1e-4_lrc1e-3_LOCAL_nd10_ceAp-D_multi0_T8M_hl128",
+    r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\reincatalyze\log\residora\2023-Jul-04-0350_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_T8M_hl128_128_DEFAULT",
+    r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\reincatalyze\log\residora\2023-Jul-04-2104_sub9_nm5_bs15_s42_ex32_mel10_mts10000_k50_ec03_g099_lra9e-4_lrc9e-3_LOCAL_nd10_ceAp-D_multi0_T8M_hl256_128",
+]
+
+dici, uniAA = get_max_rewards(dirList, filterRewardAbove=100, withAA=True)
+pprint(dici)
+dici.keys()
+
+d2 =create_co_occur_matrix(dici)
+
+plt.figure(figsize=(15,10))
+
+mask = np.triu(np.ones_like(d2, dtype=bool))
+
+plt.figure(figsize=(15, 10))
+
+mask = np.triu(np.ones_like(d2, dtype=bool))
+ax = sns.heatmap(d2, cmap="YlGnBu", mask=mask)
+
+plt.title('Co-occurrence of mutationResidues', fontsize=16, fontweight='bold')
+plt.xlabel('mutationResidues', fontsize=18, fontweight='bold')
+plt.ylabel('mutationResidues', fontsize=18, fontweight='bold')
+
+plt.xticks(fontsize=16, fontweight='bold')
+plt.yticks(fontsize=16, fontweight='bold')
+
+plt.savefig("cooccurence_mutRes_rewOver100_mutation.png", dpi=300)
+
+plt.show()
+
+
+
+_ = sns.heatmap(d2, cmap="YlGnBu", mask=mask)
+
+plt.title('Co-occurrence of mutationResidues')
+plt.xlabel('mutationResidues')
+plt.ylabel('mutationResidues')
+plt.savefig("cooccurence_mutRes_rewOver100_mutation.png", dpi = 300)
+
+plt.show()

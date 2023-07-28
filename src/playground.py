@@ -50,18 +50,34 @@ def intSec(list1, list2):
     intersecting_integers = set1.intersection(set2)
     return list(intersecting_integers)
 
-pa = r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\REINCA~1\log\residora\TARGET~1\2023_J~1\2023-J~1\2023-J~2.CSV"
+def resText(gen, df):
+    df_ = df[(df.generation == gen )]
+    mr = df_.mutationResidue
+    old = df_.oldAA
+    new = df_.newAA
+    rList = [o+str(m)+n for o, m, n in zip(old, mr, new)]
+    pymolList = "+".join(str(i) for i in mr)
+    return rList, pymolList
+
+pa = r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\REINCA~1\log\residora\209C01~1\2023-J~2.CSV"
 
 df = pd.read_csv(pa)
 
 df.mutationResidue = df.mutationResidue + 1
 
-df[df.reward > 11]
+df[(df.reward > 100)]
 
+len(df[(df.reward > 90) & (df.generation < 70)].mutationResidue.unique())
 
+df269= df[(df.generation == 269)]
 
-df196 = df[(df.generation == 196 )]
-rList1, pyList1 = resText(196)
+rList1, pyList1 = resText(269, df)
+
+df37 = df[(df.generation == 37)]
+rList1, pyList1 = resText(37, df)
+
+df44 = df[(df.generation == 44)]
+
 
 df196["mutation"] = rList1
 
@@ -70,14 +86,7 @@ plot_reward_vs_mutation(df196)
 
 plt.show()
 
-def resText(gen):
-    df_ = df[(df.generation == gen )]
-    mr = df_.mutationResidue
-    old = df_.oldAA
-    new = df_.newAA
-    rList = [o+str(m)+n for o, m, n in zip(old, mr, new)]
-    pymolList = "+".join(str(i) for i in mr)
-    return rList, pymolList
+
 
 rList1, pyList1 = resText(354)
 rList2, pyList2 = resText(224)

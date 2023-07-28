@@ -133,7 +133,8 @@ def HeatmapPlotter(heatmap_file_InFun, excel_choice_InFun, heatmap_folder,
     if ausrichtung == 'horizontal' or "":
         plt.figure(figsize=(30, 10))
         fig, ax = plt.subplots()
-        im, cbar = heatmap(data_matrix_T, sub, sca, ax=ax, cmap=cmap, cbarlabel=colorbarTitle, vmin=0, vmax=float(round(np.max(data_matrix_T)+0.5, 1))) #vmax=int(round(max(data_matrix_T)+0.5)) vmin and max stands for min and max values in konzentration bar
+      #  im, cbar = heatmap(data_matrix_T, sub, sca, ax=ax, cmap=cmap, cbarlabel=colorbarTitle, vmin=0, vmax=float(round(np.max(data_matrix_T)+0.5, 1))) #vmax=int(round(max(data_matrix_T)+0.5)) vmin and max stands for min and max values in konzentration bar
+        im, cbar = heatmap(data_matrix_T, sub, sca, ax=ax, cmap=cmap, cbarlabel=colorbarTitle, vmin=-1, vmax=1) #vmax=int(round(max(data_matrix_T)+0.5)) vmin and max stands for min and max values in konzentration bar
         #only show every second tick
         for label in cbar.ax.xaxis.get_ticklabels()[::2]:
             label.set_visible(True)
@@ -209,19 +210,20 @@ if __name__ == "__main__":
     #------------------------------------------------
 
 pi =r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\MASTER\MASTERARBEIT\JOURNAL\SDS_forMA.csv"
-pi =r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\MASTER\MASTERARBEIT\JOURNAL\OD_forMA.csv"
+pi =r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\MASTER\MASTERARBEIT\Bioinformatic\Results_postProcessing\screeningSummary4MA_peakArea.csv"
 
 #create OD plot
 HeatmapPlotter(
     heatmap_file_InFun=pi,
     excel_choice_InFun=False,
     heatmap_folder = r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\MASTER\MASTERARBEIT\JOURNAL",
-    heatmap_name="OD_MA",
+    heatmap_name="summary_peakArea_z_norm",
     delimiter_heatmap_InFun=";",
     heatmap_orientation="horizontal",
-    colorbarTitle = "OD_600",
-    cmap = "copper_r",
+    colorbarTitle = "Z-score normalization",
+    #cmap = "copper_r",
     #cmap = 'PiYG',
+    cmap = 'BuPu',
     colorBarXTickerBase = 0.5
 )
 

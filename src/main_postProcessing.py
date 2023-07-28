@@ -104,6 +104,7 @@ def mutationFrequency(filepath, fileName, originalSeq = 'MSTETLRLQKARATEEGLAFETP
     groupedRep = dfRep.groupby(['oldAA', 'mutationResidue']).size().reset_index(name='frequency')
 
     # Create a scatter plot
+    #plt.figure(figsize=(30, 20))
     plt.figure(figsize=(30, 20))
 
     plt.scatter(grouped['mutationResidue'], grouped['oldAA'], s=grouped['frequency'] * 5, alpha=0.4, c="b", label='Overall Frequency')
@@ -175,6 +176,9 @@ def mutation_summary(filepath: str, output_filename=None):
 
 if __name__ == "__main__":
 
-
+    mutationFrequency(
+        filepath=r"C:\Users\kevin\OneDrive - ZHAW\KEVIN STUFF\ZHAW\_PYTHON_R\_GITHUB\REINCA~1\log\residora\209C01~1\2023-J~2.CSV",
+        fileName="mutFreq.png"
+    )
     
 
