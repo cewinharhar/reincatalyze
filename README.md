@@ -199,26 +199,12 @@ chapter: Installation with an environment manager
 2. make it executable with `chmod a+x ADFRsuite_Linux-x86_64_1.0_install` 
 3. and install with `sh ADFRsuite_Linux-x86_64_1.0_install`
 
-
-### Installation
-
-_Below is an example of how you can instruct your audience on installing and setting up your app. This template doesn't rely on any external dependencies or services._
-
-1. Get a free API Key at [https://example.com](https://example.com)
-2. Clone the repo
-   ```sh
-   git clone https://github.com/your_username_/Project-Name.git
-   ```
-
-
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 <!-- USAGE EXAMPLES -->
 ## Usage
-
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
+To use the G-Reincatalyze Pipeline you should create/adapt your config.yaml file with your specifications
 
 _For more examples, please refer to the [Documentation](https://example.com)_
 
