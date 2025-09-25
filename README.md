@@ -1,214 +1,168 @@
-<!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
-<a name="readme-top"></a>
-<!--
-*** Thanks for checking out the Best-README-Template. If you have a suggestion
-*** that would make this better, please fork the repo and create a pull request
-*** or simply open an issue with the tag "enhancement".
-*** Don't forget to give the project a star!
-*** Thanks again! Now go create something AMAZING! :D
--->
+# G-ReInCATALiZE
 
+**G**PU-accelerated **Re**inforcement learning-enabled **In**tegrated **C**ombination of **A**utomated **T**ransformer-based **A**pproaches with **Li**gand binding and 3D prediction for En**z**yme **E**volution
 
-
-<!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
-
-[![MIT License][license-shield]][license-url]
-[![LinkedIn][linkedin-shield]][[linkedin-url](https://www.linkedin.com/in/kevin-yar-76667a192/)]
-
-
-
-<!-- PROJECT LOGO -->
-<br />
 <div align="center">
-  <a href="https://github.com/othneildrew/Best-README-Template">
-    <img src="images/stableLOGO5_noBackground_small.png" alt="Logo" width="80" height="80">
-  </a>
-
-  <h3 align="center">G-ReInCATALiZE</h3>
-
-  <p align="center">
-    GPU-accelerated Reinforcement learning-enabled Combination of Automated Transformer-based Approaches with Ligand binding and 3D prediction for Enzyme evolution
-    <br />
-    <a href="https://github.com/othneildrew/Best-README-Template"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/othneildrew/Best-README-Template">View Demo</a>
-    ·
-    <a href="https://github.com/othneildrew/Best-README-Template/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/othneildrew/Best-README-Template/issues">Request Feature</a>
-  </p>
+  <img src="images/g-reincatalyze_overview.jpg" alt="G-ReInCATALiZE Pipeline Overview" width="100%">
 </div>
 
+---
 
+## About
 
-<!-- TABLE OF CONTENTS -->
+G-ReInCATALiZE is an advanced computational pipeline for **in-silico enzyme evolution**, developed by the CCBIO team at the University of Applied Sciences (ZHAW) in Wädenswil. The system combines cutting-edge machine learning approaches to optimize enzyme mutations for improved catalytic activity with specific target substrates.
+
+**Key Capabilities:**
+- Find optimal enzyme mutants from wildtype enzymes for targeted ligand transformations
+- GPU-accelerated molecular docking and structure prediction
+- Reinforcement learning-guided mutation optimization
+- Transformer-based mutation effect prediction using ESM2 models
+
+## Architecture
+
+The pipeline integrates four main computational components as shown in the overview diagram:
+
+1. **DeepMut** - ESM2 transformer-based semi-rational multi-site mutation prediction
+2. **RESIDORA** - Deep reinforcement learning using Proximal Policy Optimization (PPO) for residue substitution
+3. **Pyroprolex** - PyRosetta-based local mutant structure relaxation
+4. **GAESP** - GPU-accelerated enzyme-substrate docking pipeline using Vina-GPU
+
+The system uses an actor-critic reinforcement learning architecture to iteratively improve enzyme candidates through mutation and structural evaluation cycles.
+
+## Getting Started
+
+### Prerequisites
+
+- **Docker** with GPU support
+- **NVIDIA Container Toolkit** for GPU acceleration
+- NVIDIA GPU with CUDA support
+
+### Quick Start with Docker
+
+1. **Build the container:**
+   ```bash
+   docker build --platform linux/amd64 -t gaesp .
+   ```
+
+2. **Run with GPU support:**
+   ```bash
+   docker run -d --gpus all --name gaesp-container -p 80:80 gaesp
+   ```
+
+3. **Execute the pipeline:**
+   ```bash
+   # Standard execution
+   PYTHONPATH=. python src/main.py --config src/CONFIG/config_default.yaml
+
+   # Debug mode
+   PYTHONPATH=. python src/main.py --config src/CONFIG/config_debug.yaml
+   ```
+
+## Usage
+
+### Configuration
+
+The pipeline is configuration-driven using YAML files in `src/CONFIG/`. Key configuration sections:
+
+- **`globalConfig`** - Transformer models, GPU settings, file paths
+- **`gaespConfig`** - Wildtype sequence, structure paths, docking parameters
+- **`pyroprolexConfig`** - PyRosetta mutation settings
+
+### Example Configuration
+
+```yaml
+config1:
+  globalConfig:
+    transformerName: facebook/esm2_t6_8M_UR50D
+    transformerDevice: cuda:0
+    gpu_vina: true
+
+  gaespConfig:
+    wildTypeAASeq: "MSTETLRLQKARATEEGLAFETPGGLT..."
+    wildTypeStructurePath: data/raw/enzyme.pdb
+    reference_ligand: data/raw/reference/ligand.pdb
+    boxSize: 15
+    num_modes: 5
+```
+
+### Running Tests
+
+```bash
+pytest tests/
+```
+
+## Development Setup
+
+### Local Development (Advanced)
+
 <details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
-  </ol>
+<summary>Click to expand detailed installation instructions</summary>
+
+The Docker container includes a complex molecular biology software stack. For local development, you'll need:
+
+#### Core Dependencies
+- **Python 3.8+** with Poetry for dependency management
+- **PyTorch** with CUDA support
+- **Transformers** library for ESM2 models
+
+#### Molecular Biology Tools
+- **Boost Library 1.82.0**
+- **Vina-GPU-2.0** for GPU-accelerated docking
+- **AutoDock-Vina** for scripting support
+- **OpenBabel** for chemical structure processing
+- **PyRosetta** for protein structure manipulation
+- **ADFRsuite-1.0** for additional docking utilities
+
+#### Installation Commands
+
+**Boost Library:**
+```bash
+wget https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.tar.bz2
+tar --bzip2 -xf boost_1_82_0.tar.bz2
+cd boost_1_82_0
+sudo ./bootstrap.sh
+sudo ./b2 install
+```
+
+**Vina-GPU-2.0:**
+```bash
+git clone https://github.com/DeltaGroupNJUPT/Vina-GPU-2.0
+# Configure Makefile with appropriate paths
+cd Vina-GPU-2.0/Vina-GPU+
+make clean && make source
+```
+
+**OpenBabel:**
+```bash
+conda install -c conda-forge openbabel
+```
+
+**PyRosetta:**
+Follow instructions at https://www.pyrosetta.org/downloads
+
 </details>
 
+### Package Management
 
+```bash
+# Install dependencies
+poetry install
 
-<!-- ABOUT THE PROJECT -->
-## About The Project
+# Add new dependency
+poetry add <package_name>
 
-This project is the result of collabborative work from the CCBIO team at the university of Applied Sciences (ZHAW) in Wädenswil. 
+# Code formatting (Black configured for 79 character lines)
+black src/
+```
 
-Use G-Reincatalyze for in-silivo evolution purposes. 
-  * Find the best mutant froma wildtype enzyme for targetet transformation of selected ligands. 
-
-Use the `BLANK_README.md` to get started.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-### Prerequisites: Working with Docker
-
-This is an example of how to list things you need to use the software and how to install them.
-<br>
-1. **Docker** <br />
-Follow the `Install using the apt repository` chapter in: https://docs.docker.com/engine/install/ubuntu/#set-up-the-repository 
-2. **nvidia-container-toolkit**
-   1. Add [repository](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) <br />  if you have ubuntu23 just change the `distribution` variable
-   2. `sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit`
-   3. `sudo nvidia-ctk runtime configure --runtime=docker`
-   4. `sudo systemctl restart docker`
-   5. Check successfull installation with: <br />`sudo docker run --rm --runtime=nvidia --gpus all nvidia/cuda:11.6.2-base-ubuntu20.04 nvidia-smi` <br />
-you should see the normal output of the `nvidia-smi` command. 
-
-
-### Whats inside the docker container:
-
-#### Boost library
-1. Download 
-    * https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.tar.bz2 
-2. mv to /usr/local/ #default location
-3. Extract: `tar --bzip2 -xf boost_1_82_0.tar.bz2`
-4. `sudo ./bootstrap.sh`
-5. `sudo ./b2 install`
-   #now we want to make the path globally accessable
-6. Add this line to your `~/.bashrc` file <br /> `export PATH="$PATH:/usr/local/boost_1_82_0/stage/lib"`
-
-#### Vina-GPU-2.0
-Before setting up Vina-GPU make sure to have exportet the LD_LIBRARY_PATH from above <br />
-1. Clone the [Vina-GPU-2.0](https://github.com/DeltaGroupNJUPT/Vina-GPU-2.0) repository
-2. Change the makefile file to: <br />
-  \# Need to be modified according to different users<br />
-  BOOST_LIB_PATH=/usr/local/boost_1_82_0<br />
-  OPENCL_LIB_PATH=/usr/local/cuda<br />
-  OPENCL_VERSION=-DOPENCL_3_0<br />
-  GPU_PLATFORM=-DNVIDIA_PLATFORM`
-1. cd into the `Vina-GPU-2.0/Vina-GPU+` dir
-2. `make clean && make source` ignore warnings  
-
-#### Autodock-Vina (for scripts)
-1. `git clone https://github.com/ccsb-scripps/AutoDock-Vina.git`
-
-#### Open babel
-
-First you need cmake: 
-
-1. `cd /usr/local/`
-1. `wget https://github.com/Kitware/CMake/releases/download/v3.26.4/cmake-3.26.4-linux-x86_64.sh `
-2. `chmod +x cmake-3.26.4-linux-x86_64.sh`
-3. `sudo ./cmake-3.26.4-linux-x86_64.sh`
-4. `sudo rm cmake-3.26.4-linux-x86_64.sh`
-5. `export PATH="$PATH:/usr/local/cmake-3.26.4-linux-x86_64/bin"`
-
-Binary location for manual download: https://sourceforge.net/projects/openbabel/files/openbabel/2.4.1/
-
-RATHER DO WITH CONDA: ``conda install -c conda-forge openbabel
-
-conda install -c conda-forge openbabel
-
-If conda doesnt work: 
-1. bash download <br />
-   `wget https://sourceforge.net/projects/openbabel/files/openbabel/2.4.1/openbabel-2.4.1.tar.gz/download -O openbabel-2.4.1.tar.gz`
-2. `tar -xf openbabel-2.4.1.tar.gz`
-3. `cd openbabel-2.4.1`
-4. `mkdir build && cd build`
-5. `cmake ..`
-6. `make -j2`
-7. `sudo make install`
-
-#### Pyrossetta
-
-Follow instructions: https://www.pyrosetta.org/downloads
-(tar is in /docker_reincat_pipeline)
-chapter: Installation with an environment manager
-
-#### ADFRsuite-1.0
-1. download linux version: `wget https://ccsb.scripps.edu/adfr/download/1028/ -O ADFRsuite_Linux-x86_64_1.0_install`
-2. make it executable with `chmod a+x ADFRsuite_Linux-x86_64_1.0_install` 
-3. and install with `sh ADFRsuite_Linux-x86_64_1.0_install`
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-<!-- USAGE EXAMPLES -->
-## Usage
-To use the G-Reincatalyze Pipeline you should create/adapt your config.yaml file with your specifications
-
-_For more examples, please refer to the [Documentation](https://example.com)_
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-1. Build docker
-   `docker build --platform linux/amd64 -t gaesp .`
-2. Run Image with GPU
-   `docker run -d --gpus all --name XXX -p 80:80 gaesp`
-
-
-
-<!-- CONTRIBUTING -->
-## Contributing
-
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- LICENSE -->
 ## License
 
-Distributed under the MIT License. See `LICENSE.txt` for more information.
+Distributed under the MIT License.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+## Contact
+
+CCBIO Team - University of Applied Sciences (ZHAW), Wädenswil
+
+---
+
+*Developed for computational enzyme engineering and in-silico directed evolution research.*
